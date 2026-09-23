@@ -1,0 +1,62 @@
+{
+ "0.0": {
+  "pl": {
+   "n_queries": 2568,
+   "recall_atc": 0.9961,
+   "tgt_hits_per_query": 0.271
+  },
+  "nl": {
+   "n_queries": 1482,
+   "recall_atc": 0.9939,
+   "tgt_hits_per_query": 0.782
+  }
+ },
+ "0.25": {
+  "pl": {
+   "n_queries": 2568,
+   "recall_atc": 0.9957,
+   "tgt_hits_per_query": 0.367
+  },
+  "nl": {
+   "n_queries": 1482,
+   "recall_atc": 0.9953,
+   "tgt_hits_per_query": 0.97
+  }
+ },
+ "0.5": {
+  "pl": {
+   "n_queries": 2568,
+   "recall_atc": 0.9965,
+   "tgt_hits_per_query": 0.477
+  },
+  "nl": {
+   "n_queries": 1482,
+   "recall_atc": 0.9953,
+   "tgt_hits_per_query": 1.132
+  }
+ },
+ "0.75": {
+  "pl": {
+   "n_queries": 2568,
+   "recall_atc": 0.9965,
+   "tgt_hits_per_query": 0.55
+  },
+  "nl": {
+   "n_queries": 1482,
+   "recall_atc": 0.9953,
+   "tgt_hits_per_query": 1.198
+  }
+ },
+ "1.0": {
+  "pl": {
+   "n_queries": 2568,
+   "recall_atc": 0.9961,
+   "tgt_hits_per_query": 0.558
+  },
+  "nl": {
+   "n_queries": 1482,
+   "recall_atc": 0.9946,
+   "tgt_hits_per_query": 1.177
+  }
+ }
+}

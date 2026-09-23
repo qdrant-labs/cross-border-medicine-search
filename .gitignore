@@ -1,0 +1,28 @@
+# Derived artifacts: embeddings, Qdrant storage, trained coordinates, OCR cache.
+# All of it is rebuilt by the scripts in src/ and src/med/ -- 1.5 GB, and none
+# of it is a source of truth. site/data/ holds the small JSON summaries the
+# static page needs, and those ARE committed.
+artifacts/
+
+# Fetched imagery. 112 MB of registry packaging photos and taxonomy thumbnails,
+# re-downloadable with src/fetch_images.py and src/med/fetch_photos.py.
+web/img/
+web/med_img/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Vercel
+.vercel/

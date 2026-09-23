@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>The Geometry of Retrieval</title>
+<style>
+  :root{
+    --bg:#0b0d12; --panel:#141821; --panel2:#1b202b; --line:#262c39;
+    --fg:#e8ecf4; --dim:#8b94a7; --accent:#dc244c; --accent2:#38bdf8;
+    --ok:#22c55e; --warn:#f59e0b; --mag:#c084fc;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif}
+  header{padding:22px 32px 0;display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+  h1{font-size:20px;margin:0;letter-spacing:-.3px}
+  .sub{color:var(--dim);font-size:13px}
+  .mode{margin-left:auto;font-size:11px;color:var(--dim);border:1px solid var(--line);
+    padding:4px 10px;border-radius:99px}
+  nav{display:flex;gap:6px;padding:18px 32px 0}
+  nav button{background:none;border:0;color:var(--dim);padding:10px 16px;cursor:pointer;
+    font-size:14px;border-bottom:2px solid transparent;font-weight:500}
+  nav button.on{color:var(--fg);border-bottom-color:var(--accent)}
+  main{padding:20px 32px 90px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+  .row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end}
+  label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.7px;
+    color:var(--dim);margin-bottom:6px}
+  input[type=text],select{background:var(--panel2);border:1px solid var(--line);color:var(--fg);
+    padding:10px 12px;border-radius:8px;font-size:14px;outline:none}
+  input[type=text]:focus,select:focus{border-color:var(--accent2)}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .grow{flex:1;min-width:240px}
+  .metric{display:flex;gap:26px;flex-wrap:wrap;margin-top:4px}
+  .metric div span{display:block}
+  .mv{font-size:26px;font-weight:650;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+  .ml{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.7px}
+  ul{list-style:none;margin:0;padding:0}
+  li{display:flex;gap:12px;align-items:center;padding:9px 12px;border-radius:8px;
+    border:1px solid transparent}
+  li+li{margin-top:3px}
+  li.same{background:rgba(220,36,76,.09);border-color:rgba(220,36,76,.28)}
+  .badge{font-size:10px;font-weight:700;letter-spacing:.6px;padding:3px 8px;border-radius:5px;
+    background:var(--panel2);color:var(--dim);min-width:74px;text-align:center;flex:none}
+  li.same .badge{background:var(--accent);color:#fff}
+  .txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px}
+  .sc{color:var(--dim);font-variant-numeric:tabular-nums;font-size:12px;flex:none}
+  .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .cols h3{margin:0 0 4px;font-size:13px}
+  .cols .note{color:var(--dim);font-size:11px;margin-bottom:10px}
+  .hint{color:var(--dim);font-size:12.5px;margin-top:10px}
+  canvas{width:100%;height:auto;display:block;border-radius:10px;background:#080a0e}
+  table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+  th,td{text-align:right;padding:7px 10px;border-bottom:1px solid var(--line)}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--dim);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.6px}
+  .good{color:var(--ok)} .bad{color:var(--accent)} .mago{color:var(--mag)}
+  .chain{font-size:12px;color:var(--dim);margin-top:8px}
+  .chain b{color:var(--fg);font-weight:600}
+  .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;
+    background:var(--panel2);color:var(--dim);margin-left:8px}
+  .hidden{display:none}
+
+  /* ---- language lanes ---- */
+  .lanes{display:flex;flex-direction:column;gap:5px;margin-top:6px}
+  .lane{display:flex;align-items:center;gap:10px;font-size:12px}
+  .lane .nm{width:92px;flex:none;color:var(--dim);text-align:right}
+  .lane .bar{flex:1;height:14px;background:var(--panel2);border-radius:4px;overflow:hidden}
+  .lane .fill{height:100%;background:var(--accent2);transition:width .45s cubic-bezier(.4,0,.2,1)}
+  .lane.self .fill{background:var(--accent)}
+  .lane .ct{width:26px;flex:none;color:var(--dim);font-variant-numeric:tabular-nums}
+  .lane.absent{opacity:.5}
+  .lane.absent .bar{background:repeating-linear-gradient(45deg,#1b202b,#1b202b 5px,#232936 5px,#232936 10px)}
+  .lane.absent .nm{color:var(--warn)}
+
+  /* ---- pipeline ---- */
+  .pipe{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .stage{font-size:11px;letter-spacing:.5px;text-transform:uppercase;padding:6px 11px;
+    border-radius:6px;border:1px solid var(--line);color:var(--dim);background:var(--panel2);
+    transition:all .18s}
+  .stage.on{color:#fff;border-color:var(--accent2);background:rgba(56,189,248,.16);
+    box-shadow:0 0 14px rgba(56,189,248,.25)}
+  .arrow{color:var(--line);font-size:13px}
+
+  /* ---- autopilot ---- */
+  #ap{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(0deg,#0b0d12 70%,rgba(11,13,18,0));
+    padding:14px 32px 16px;display:flex;align-items:center;gap:16px;z-index:50}
+  #apbar{flex:1;height:3px;background:var(--line);border-radius:2px;overflow:hidden}
+  #apfill{height:100%;width:0;background:var(--accent);transition:width .3s linear}
+  #apmsg{font-size:13px;color:var(--fg);min-width:0;flex:2}
+  #apkey{font-size:11px;color:var(--dim);border:1px solid var(--line);padding:4px 10px;
+    border-radius:6px;flex:none}
+  .tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.6px;padding:2px 7px;
+    border-radius:4px;background:var(--accent);color:#fff;margin-right:8px;vertical-align:1px}
+</style>
+</head>
+<body>
+<header>
+  <h1>The Geometry of Retrieval</h1>
+  <span class="sub">One dataset — Google Product Taxonomy — two geometries</span>
+  <span class="mode" id="mode">…</span>
+</header>
+
+<nav>
+  <button id="t1" class="on" onclick="tab(1)">1 — Language is a direction</button>
+  <button id="t2" onclick="tab(2)">2 — Curvature is a choice</button>
+  <button id="t3" onclick="tab(3)">3 — Radius finds bad data</button>
+</nav>
+
+<main>
+<!-- ============================ SHIFT ============================ -->
+<section id="p1">
+  <div class="card">
+    <div class="row">
+      <div class="grow">
+        <label>Query</label>
+        <input type="text" id="q" value="calzado" style="width:100%"
+               onkeydown="if(event.key==='Enter')runShift()"/>
+      </div>
+      <div>
+        <label>Query language</label>
+        <select id="lang" onchange="runShift()"></select>
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <label>Shift strength &nbsp;α = <span id="av">0.00</span>
+        &nbsp;<span class="pill" id="apill">untouched embedding space</span></label>
+      <input type="range" id="alpha" min="0" max="4" step="1" value="0" oninput="runShift()"/>
+    </div>
+    <div class="pipe" id="pipe1"></div>
+    <div class="metric" style="margin-top:18px">
+      <div><span class="mv" id="m1">–</span><span class="ml">results in query language</span></div>
+      <div><span class="mv" id="m2">–</span><span class="ml">distinct languages in top 10</span></div>
+      <div><span class="mv" id="m3">–</span><span class="ml">round trip</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 10px;font-size:14px">Which languages survive the top 10</h3>
+    <div class="lanes" id="lanes"></div>
+    <div class="hint" id="calhint"></div>
+  </div>
+
+  <div class="card">
+    <ul id="hits"></ul>
+    <div class="hint">Highlighted rows are in the query's own language. Slide α to the
+      right and watch other languages surface — no retraining, no second index.</div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 12px;font-size:14px">Measured over all 5,595 categories × 9 languages</h3>
+    <table id="sweep"></table>
+    <div class="hint">Offsets are fitted on a disjoint split of categories, so nothing
+      leaks into evaluation.</div>
+  </div>
+</section>
+
+<!-- ========================== HYPERBOLIC ========================== -->
+<section id="p2" class="hidden">
+  <div class="card">
+    <div class="row">
+      <div class="grow">
+        <label>Category</label>
+        <input type="text" id="csearch" placeholder="type to filter…" style="width:100%"
+               oninput="filterCats()"/>
+      </div>
+      <div class="grow">
+        <label>Pick one</label>
+        <select id="cat" style="width:100%" onchange="runHyper()"></select>
+      </div>
+    </div>
+    <div class="row" style="margin-top:16px">
+      <div class="grow">
+        <label>Prefetch candidates = <span id="pv">1000</span></label>
+        <input type="range" id="pf" min="0" max="4" step="1" value="4" oninput="runHyper()"/>
+      </div>
+      <div>
+        <label>Rescore</label>
+        <select id="rs" onchange="runHyper()">
+          <option value="true">hyperbolic (Formula Query)</option>
+          <option value="false">off — Euclidean only</option>
+        </select>
+      </div>
+    </div>
+    <div class="pipe" id="pipe2"></div>
+    <div class="chain" id="chain"></div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="align-items:flex-start">
+      <div style="flex:1;min-width:300px">
+        <canvas id="disk" width="760" height="760"></canvas>
+        <div class="row" style="margin-top:10px;gap:10px">
+          <label style="margin:0"><input type="checkbox" id="showsib" checked
+            onchange="runHyper()"/> show geodesics to siblings</label>
+        </div>
+      </div>
+      <div style="flex:1;min-width:280px">
+        <h3 style="margin:0 0 6px;font-size:14px">Radius is specificity</h3>
+        <div class="hint" style="margin:0 0 14px">
+          Every dot is one of 5,595 categories in a 2-dimensional Poincaré disk.
+          Broad categories sit near the centre; the most specific leaves press against
+          the rim. <b style="color:var(--accent)">Red</b> is the path from the root to
+          your selection.
+        </div>
+        <div class="hint" style="margin:0 0 10px;border-left:2px solid var(--mag);padding-left:10px">
+          <b class="mago">Purple</b> are geodesics to its siblings — the
+          <i>shortest</i> routes between two categories that sit almost on top of each
+          other at the rim. They plunge inward, passing shallower than the parent.
+          In this space the quickest way between two specific things is through the
+          general. That is why hierarchies fit here and not in flat space.
+        </div>
+        <canvas id="sib" width="520" height="290"></canvas>
+        <div class="hint" style="margin:0 0 14px">Radius along that shortest path. It
+          dips <b>below the amber line</b> — below the siblings' own parent. On the disk
+          these arcs overlap into one stripe, which is why the profile is plotted
+          instead.</div>
+        <table id="prefsweep"></table>
+        <div class="hint">Euclidean HNSW alone finds only a fraction of the true
+          hyperbolic neighbours. The Formula Query rescore recovers them.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="cols" id="panels"></div>
+    <div class="hint">Watch the <b>r</b> column. Hyperbolic search walks
+      <i>inward</i> — it returns the ancestors, at smaller radius (green). The flat and
+      text panels return siblings sitting at roughly the same radius: semantically
+      close, hierarchically useless.</div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 12px;font-size:14px">Same data, same optimizer — only the geometry differs</h3>
+    <table id="dimtable"></table>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 4px;font-size:14px">Latency, client round-trip</h3>
+    <div class="hint" style="margin:0 0 10px">Log scale. Includes HTTP and, on the
+      search tab, sentence-transformer encoding — so this is what a user feels, not an
+      isolated Qdrant timing.</div>
+    <canvas id="lat" width="760" height="150"></canvas>
+  </div>
+</section>
+
+<!-- =========================== ANOMALIES =========================== -->
+<section id="p3" class="hidden">
+  <div class="card">
+    <h3 style="margin:0 0 6px;font-size:14px">The model was never shown a depth label</h3>
+    <div class="hint" style="margin:0 0 4px">
+      It only ever saw <i>is-an-ancestor-of</i> links. So the radius it learned is what the
+      <b>structure</b> implies about how general a category is. Where that disagrees with
+      the level the category is actually filed at, the taxonomy is often the thing that is
+      wrong. Residual below is a robust z-score computed <i>within</i> each depth, so it
+      means "strange for its level", not merely "deep".
+    </div>
+    <div class="metric" style="margin-top:16px">
+      <div><span class="mv" id="s1">–</span><span class="ml">Spearman(radius, depth)</span></div>
+      <div><span class="mv good" id="s2">–</span><span class="ml">mean residual, leaf nodes</span></div>
+      <div><span class="mv bad" id="s3">–</span><span class="ml">mean residual, hub nodes</span></div>
+      <div><span class="mv" id="s4">–</span><span class="ml">Spearman(residual, #children)</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <canvas id="scatter" width="760" height="380"></canvas>
+    <div class="hint">Each dot is a category: depth across, learned hyperbolic radius up.
+      The bands are tight — radius really does encode level. The
+      <b class="bad">red</b> dots are the categories whose radius fights their level.</div>
+  </div>
+
+  <div class="card">
+    <div class="cols" style="grid-template-columns:1fr 1fr">
+      <div>
+        <h3 style="margin:0 0 4px;font-size:13px">Filed too deep — behaves like a hub</h3>
+        <div class="note" style="color:var(--dim);font-size:11px;margin-bottom:10px">
+          radius far <i>smaller</i> than its level-mates</div>
+        <ul id="ageneral"></ul>
+      </div>
+      <div>
+        <h3 style="margin:0 0 4px;font-size:13px">Filed too shallow — behaves like a leaf</h3>
+        <div class="note" style="color:var(--dim);font-size:11px;margin-bottom:10px">
+          radius far <i>larger</i> than its level-mates</div>
+        <ul id="aspecific"></ul>
+      </div>
+    </div>
+    <div class="hint">Every flagged hub has dozens of children; every flagged leaf has
+      none. Point this at your own category tree and it returns a ranked list of nodes to
+      re-file — no labels, no eval set. <b>Caveat:</b> the residual/child-count
+      correlation is −0.30 — a triage signal, not an oracle. The clean separation is
+      leaf vs hub.</div>
+  </div>
+</section>
+</main>
+
+<div id="ap">
+  <span id="apkey">SPACE</span>
+  <span id="apmsg">Press <b>space</b> to run the demo hands-free.</span>
+  <div id="apbar"><div id="apfill"></div></div>
+</div>
+
+<script>
+const ALPHAS=[0,.25,.5,.75,1], PREF=[10,50,100,300,1000];
+let META=null, CATS=[], LAT=[], AN=null;
+
+async function j(u){
+  const t0=performance.now();
+  const r=await fetch(u); const d=await r.json();
+  LAT.push({ms:performance.now()-t0, u}); if(LAT.length>60)LAT.shift();
+  drawLat(); return d;
+}
+
+function tab(n){
+  t1.className=n===1?'on':''; t2.className=n===2?'on':''; t3.className=n===3?'on':'';
+  p1.classList.toggle('hidden',n!==1);
+  p2.classList.toggle('hidden',n!==2);
+  p3.classList.toggle('hidden',n!==3);
+  if(n===2&&!CATS.length) initHyper();
+  if(n===3&&!AN) initAnom();
+}
+
+/* ------------------------- pipeline chrome ------------------------- */
+function pipe(el,stages,active){
+  el.innerHTML=stages.map((s,i)=>
+    `<span class="stage${i<=active?' on':''}">${s}</span>`+
+    (i<stages.length-1?'<span class="arrow">&#9654;</span>':'')).join('');
+}
+async function runPipe(el,stages,ms=110){
+  for(let i=0;i<stages.length;i++){pipe(el,stages,i); await sleep(ms)}
+}
+const sleep=m=>new Promise(r=>setTimeout(r,m));
+
+/* ---------------------------- SHIFT ---------------------------- */
+const P1=['query','encode','shift −α·offset','search 50,355','top 10'];
+async function runShift(){
+  const a=ALPHAS[+alpha.value];
+  av.textContent=a.toFixed(2);
+  apill.textContent = a===0 ? 'untouched embedding space'
+                    : a===1 ? 'full shift toward the pivot language'
+                    : 'partial shift';
+  runPipe(pipe1,P1);
+  const t0=performance.now();
+  const d=await j(`/api/shift?q=${encodeURIComponent(q.value)}&lang=${lang.value}&alpha=${a}`);
+  const ms=performance.now()-t0;
+  pipe(pipe1,P1,P1.length-1);
+  m1.textContent=`${d.same_language_in_top_k} / 10`;
+  m1.className='mv '+(d.same_language_in_top_k>=7?'bad':'good');
+  m2.textContent=d.distinct_languages;
+  m3.textContent=Math.round(ms)+' ms';
+  hits.innerHTML=d.hits.map(h=>`
+    <li class="${h.same_language?'same':''}">
+      <span class="badge">${h.lang_label}</span>
+      <span class="txt">${h.text}</span>
+      <span class="sc">${h.score.toFixed(3)}</span>
+    </li>`).join('');
+  drawLanes(d);
+  sweepTable(META.shift_sweep);
+}
+
+function drawLanes(d){
+  const ct={}; d.hits.forEach(h=>ct[h.lang]=(ct[h.lang]||0)+1);
+  const rows=META.langs.map(l=>({...l,n:ct[l.code]||0}))
+                       .sort((a,b)=>b.n-a.n||a.label.localeCompare(b.label));
+  lanes.innerHTML=rows.map(l=>`
+    <div class="lane${l.code===d.query_lang?' self':''}">
+      <span class="nm">${l.label}</span>
+      <span class="bar"><span class="fill" style="width:${l.n*10}%"></span></span>
+      <span class="ct">${l.n}</span>
+    </div>`).join('')
+    + `<div class="lane absent">
+      <span class="nm">Catalan</span>
+      <span class="bar"></span><span class="ct">—</span></div>`;
+  calhint.innerHTML=`Google publishes this taxonomy in ${META.langs.length} languages.
+    <b style="color:var(--warn)">Catalan is not one of them</b> — <code>ca-ES</code>
+    returns a 404. No amount of geometry fixes a corpus that was never written down.`;
+}
+
+function sweepTable(s){
+  if(!s){sweep.innerHTML='';return}
+  const rows=Object.keys(s).sort((x,y)=>+x-+y);
+  sweep.innerHTML=`<tr><th>α</th><th>recall@10</th><th>same-language
+    recall@10</th><th>cross-language recall@10</th><th>% of top-10 in query language</th></tr>`+
+    rows.map(k=>{const r=s[k];const on=Math.abs(+k-ALPHAS[+alpha.value])<1e-6;
+      return `<tr style="${on?'background:rgba(56,189,248,.08)':''}">
+      <td>${(+k).toFixed(2)}</td><td>${r['recall@10'].toFixed(3)}</td>
+      <td>${r['same_language_recall@10'].toFixed(3)}</td>
+      <td class="good">${r['cross_language_recall@10'].toFixed(3)}</td>
+      <td class="bad">${(r['same_language_share@10']*100).toFixed(1)}%</td></tr>`}).join('');
+}
+
+/* -------------------------- HYPERBOLIC -------------------------- */
+const P2=['category','prefetch HNSW','Formula rescore','top 10'];
+async function initHyper(){
+  // opens on the demo query: a depth-4 leaf whose ancestors are unmistakable
+  csearch.value='espresso pots';
+  CATS=await j('/api/categories?limit=400&search=espresso%20pots');
+  fillCats(CATS); await runHyper();
+}
+function fillCats(list){
+  cat.innerHTML=list.map(c=>`<option value="${c.category_id}">${'· '.repeat(c.depth)}${c.full}</option>`).join('');
+}
+async function filterCats(){
+  CATS=await j(`/api/categories?limit=400&search=${encodeURIComponent(csearch.value)}`);
+  fillCats(CATS); if(CATS.length) runHyper();
+}
+
+async function runHyper(){
+  if(!cat.value) return;
+  const p=PREF[+pf.value]; pv.textContent=p;
+  runPipe(pipe2,P2);
+  const d=await j(`/api/hyper?category_id=${cat.value}&prefetch=${p}&rescore=${rs.value}`);
+  pipe(pipe2,P2,P2.length-1);
+  chain.innerHTML=`<b>${d.query.full}</b> &nbsp;·&nbsp; depth ${d.query.depth}
+    &nbsp;·&nbsp; radius ${d.query.radius.toFixed(3)}`;
+  const names={hyperbolic:['Hyperbolic (rescored)','true geodesic, served by Qdrant'],
+               euclidean:['Euclidean (flat)','same training, flat geometry'],
+               text:['Text embedding','multilingual-e5-small, cosine']};
+  const qr=d.query.radius;
+  panels.innerHTML=d.panels.map(pn=>`
+    <div><h3>${names[pn.panel][0]}</h3><div class="note">${names[pn.panel][1]}</div>
+    <ul>${pn.hits.map(h=>`<li><span class="badge">d${h.depth}</span>
+      <span class="txt" title="${h.full}">${h.name}</span>
+      <span class="sc" title="hyperbolic radius (query = ${qr})"
+        style="color:${h.radius<qr-1?'#22c55e':'#8b94a7'}">r ${h.radius.toFixed(1)}</span>
+      </li>`).join('')}</ul></div>`).join('');
+  prefTable(META.hyperbolic);
+  drawDisk(cat.value);
+}
+
+async function drawDisk(cid){
+  const d=await j(`/api/disk?category_id=${cid}`);
+  const c=document.getElementById('disk'), g=c.getContext('2d');
+  const W=c.width, R=W/2-14;
+  g.clearRect(0,0,W,W);
+  const P=p=>[W/2+p.x*R, W/2-p.y*R];
+
+  // boundary: the circle at infinity
+  g.strokeStyle='#2a3140'; g.lineWidth=2;
+  g.beginPath(); g.arc(W/2,W/2,R,0,7); g.stroke();
+
+  const col=['#38bdf8','#5eead4','#a3e635','#fcd34d','#fb923c','#f87171','#f472b6'];
+  for(const p of d.points){const[x,y]=P(p);
+    g.fillStyle=col[Math.min(p.d,6)]+'55';
+    g.beginPath(); g.arc(x,y,1.7,0,7); g.fill();}
+
+  // the ancestor chain, traced along true geodesics. Drawn FIRST so the
+  // sibling arcs sit on top of it -- they run through the same radial
+  // corridor, so whichever is painted last is the one you can actually see.
+  if(d.path&&d.path.length){
+    g.strokeStyle='#dc244c'; g.lineWidth=2.5; g.beginPath();
+    d.path.forEach((p,i)=>{const[x,y]=P(p); i?g.lineTo(x,y):g.moveTo(x,y)});
+    g.stroke();
+  }
+  if(showsib.checked && d.sibling_paths){
+    g.lineWidth=2.5; g.strokeStyle='rgba(192,132,252,.95)';
+    for(const s of d.sibling_paths){
+      g.beginPath();
+      s.pts.forEach((p,i)=>{const[x,y]=P(p); i?g.lineTo(x,y):g.moveTo(x,y)});
+      g.stroke();
+      const e=s.pts[s.pts.length-1], [ex,ey]=P(e);
+      g.fillStyle='#c084fc'; g.beginPath(); g.arc(ex,ey,3.5,0,7); g.fill();
+    }
+  }
+  if(d.chain.length){
+    d.chain.forEach(p=>{const[x,y]=P(p);
+      g.fillStyle='#dc244c'; g.beginPath(); g.arc(x,y,5,0,7); g.fill();
+      g.fillStyle='#fff'; g.font='600 12px -apple-system,sans-serif';
+      g.fillText(p.n.slice(0,26), x+9, y-7);});
+  }
+  drawSib(d);
+}
+
+/* Depth profile along the sibling geodesics.
+   Drawing the arcs on the disk does not work: the siblings all lie in nearly
+   the same direction, so the paths leave and return along the same corridor
+   and overlap into a single stripe. Plotting hyperbolic radius against
+   progress along the path shows the same fact unambiguously -- a U that dips
+   below the parent's radius. Shortest route between two specific categories
+   passes through something more general than their own parent. */
+function drawSib(d){
+  const c=document.getElementById('sib'); if(!c) return;
+  const g=c.getContext('2d'), W=c.width, H=c.height;
+  g.clearRect(0,0,W,H);
+  const paths=(showsib.checked && d.sibling_paths) || [];
+  if(!paths.length){
+    g.fillStyle='#4b5466'; g.font='12px -apple-system,sans-serif';
+    g.fillText('this category has no siblings', 14, 24); return;
+  }
+  const L=42, B=26, T=14;
+  const all=[].concat(...paths.map(s=>s.pts.map(p=>p.r)));
+  const pr=d.parent_radius;
+  let lo=Math.min(...all, pr??1e9), hi=Math.max(...all, pr??-1e9);
+  const pad=(hi-lo)*.12+.01; lo-=pad; hi+=pad;
+  const X=t=>L+t*(W-L-14), Y=r=>H-B-((r-lo)/(hi-lo))*(H-B-T);
+
+  g.strokeStyle='#1b202b'; g.lineWidth=1;
+  g.font='10px ui-monospace,monospace'; g.fillStyle='#4b5466';
+  for(let k=0;k<=4;k++){const r=lo+(hi-lo)*k/4, y=Y(r);
+    g.beginPath(); g.moveTo(L,y); g.lineTo(W-14,y); g.stroke();
+    g.fillText(r.toFixed(1),6,y+3);}
+
+  if(pr!=null){
+    g.setLineDash([5,4]); g.strokeStyle='#f59e0b'; g.lineWidth=1.5;
+    g.beginPath(); g.moveTo(L,Y(pr)); g.lineTo(W-14,Y(pr)); g.stroke();
+    g.setLineDash([]);
+    g.fillStyle='#f59e0b'; g.font='600 10px -apple-system,sans-serif';
+    g.fillText('parent: '+(d.parent_name||'').slice(0,22)+'  r='+pr, L+6, Y(pr)-9);
+  }
+  const cols=['#c084fc','#7dd3fc','#5eead4'];
+  paths.forEach((s,k)=>{
+    g.strokeStyle=cols[k%3]; g.lineWidth=2.4; g.beginPath();
+    s.pts.forEach((p,i)=>{const x=X(i/(s.pts.length-1)), y=Y(p.r);
+      i?g.lineTo(x,y):g.moveTo(x,y)});
+    g.stroke();
+    const mn=Math.min(...s.pts.map(p=>p.r));
+    const mi=s.pts.findIndex(p=>p.r===mn);
+    g.fillStyle=cols[k%3]; g.beginPath();
+    g.arc(X(mi/(s.pts.length-1)),Y(mn),3.5,0,7); g.fill();
+  });
+  g.fillStyle='#8b94a7'; g.font='11px -apple-system,sans-serif';
+  g.fillText('query',L-4,H-9);
+  g.fillText('sibling',W-58,H-9);
+  g.fillStyle='#cbd3e1';
+  g.fillText('hyperbolic radius along the shortest path',L+70,H-9);
+}
+
+function drawLat(){
+  const c=document.getElementById('lat'); if(!c) return;
+  const g=c.getContext('2d'), W=c.width, H=c.height;
+  g.clearRect(0,0,W,H);
+  if(!LAT.length) return;
+  const lo=Math.log10(1), hi=Math.log10(Math.max(1000,...LAT.map(d=>d.ms)));
+  const Y=ms=>H-8-(Math.log10(Math.max(ms,1))-lo)/(hi-lo)*(H-22);
+  g.strokeStyle='#1b202b'; g.lineWidth=1; g.font='10px ui-monospace,monospace';
+  [1,10,100,1000].forEach(v=>{const y=Y(v);
+    g.beginPath(); g.moveTo(34,y); g.lineTo(W-6,y); g.stroke();
+    g.fillStyle='#4b5466'; g.fillText(v+'ms',4,y+3);});
+  const bw=(W-42)/LAT.length;
+  LAT.forEach((d,i)=>{
+    const x=34+i*bw, y=Y(d.ms);
+    g.fillStyle=d.ms>400?'#dc244c':d.ms>120?'#f59e0b':'#22c55e';
+    g.fillRect(x+1,y,Math.max(bw-2,1),H-8-y);});
+}
+
+function prefTable(h){
+  if(!h){prefsweep.innerHTML='';return}
+  prefsweep.innerHTML=`<tr><th>prefetch</th><th>Euclidean only</th><th>with rescore</th></tr>`+
+    h.prefetch_sweep.map(r=>`<tr style="${r.prefetch===PREF[+pf.value]?'background:rgba(56,189,248,.08)':''}">
+      <td>${r.prefetch}</td><td class="bad">${r.euclidean_only.toFixed(3)}</td>
+      <td class="good">${r.with_rescore.toFixed(3)}</td></tr>`).join('');
+}
+
+function dimTable(p){
+  if(!p||!p.results){dimtable.innerHTML='';return}
+  const dims=[...new Set(Object.keys(p.results).map(k=>+k.split('_')[1]))].sort((a,b)=>a-b);
+  dimtable.innerHTML=`<tr><th>dimensions</th><th>Euclidean MAP</th><th>Poincaré MAP</th></tr>`+
+    dims.map(d=>{const e=p.results['euclidean_'+d], h=p.results['poincare_'+d];
+    return `<tr><td>${d}</td><td>${e?e.map_ancestors.toFixed(3):'–'}</td>
+      <td class="good">${h?h.map_ancestors.toFixed(3):'–'}</td></tr>`}).join('');
+}
+
+/* --------------------------- ANOMALIES --------------------------- */
+async function initAnom(){
+  AN=await j('/api/anomalies?n=7');
+  const s=AN.stats;
+  s1.textContent=s.spearman_radius_depth.toFixed(3);
+  s2.textContent=(s.mean_z_leaf>0?'+':'')+s.mean_z_leaf.toFixed(2);
+  s3.textContent=s.mean_z_internal.toFixed(2);
+  s4.textContent=s.spearman_residual_children.toFixed(3);
+  const row=r=>`<li><span class="badge">d${r.depth} · ${r.kids} kids</span>
+     <span class="txt" title="${r.full}">${r.name}</span>
+     <span class="sc">z ${r.z>0?'+':''}${r.z.toFixed(1)}</span></li>`;
+  ageneral.innerHTML=AN.too_general.map(row).join('');
+  aspecific.innerHTML=AN.too_specific.map(row).join('');
+  drawScatter();
+}
+
+function drawScatter(){
+  const c=document.getElementById('scatter'), g=c.getContext('2d');
+  const W=c.width, H=c.height; g.clearRect(0,0,W,H);
+  const pts=AN.points, L=52, B=28;
+  const ds=pts.map(p=>p.depth), rs=pts.map(p=>p.radius);
+  const dmax=Math.max(...ds), rmin=Math.min(...rs), rmax=Math.max(...rs);
+  const X=d=>L+(d/Math.max(dmax,1))*(W-L-18);
+  const Y=r=>H-B-((r-rmin)/Math.max(rmax-rmin,1e-9))*(H-B-16);
+  g.strokeStyle='#1b202b'; g.font='10px ui-monospace,monospace'; g.fillStyle='#4b5466';
+  for(let d=0;d<=dmax;d++){const x=X(d);
+    g.beginPath(); g.moveTo(x,12); g.lineTo(x,H-B); g.stroke();
+    g.fillText('d'+d,x-7,H-B+14);}
+  g.fillText('radius',4,20);
+  // jitter horizontally so the columns read as clouds, not stripes
+  let seed=1; const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647-.5;
+  for(const p of pts){
+    const x=X(p.depth)+rnd()*26, y=Y(p.radius), a=Math.abs(p.z);
+    g.fillStyle = a>4 ? '#dc244c' : a>2.5 ? '#f59e0b' : 'rgba(56,189,248,.28)';
+    g.beginPath(); g.arc(x,y,a>4?3:1.8,0,7); g.fill();}
+  g.fillStyle='#8b94a7'; g.font='11px -apple-system,sans-serif';
+  g.fillText('red = |z| > 4   ·   amber = |z| > 2.5',L,H-2);
+}
+
+/* --------------------------- AUTOPILOT --------------------------- */
+let APon=false, APstop=false;
+const SCRIPT=[
+  {m:'A Spanish shopper searches a nine-language catalogue. Untouched embedding space.',
+   f:async()=>{tab(1); q.value='calzado'; lang.value='es-ES'; alpha.value=0; await runShift();}, t:4200},
+  {m:'Nine of ten results come back in Spanish. The catalogue is multilingual; the answers are not.',
+   f:async()=>{}, t:3600},
+  {m:'Now subtract the language offset. One vector, applied at index and query time.',
+   f:async()=>{alpha.value=2; await runShift();}, t:3800},
+  {m:'Full shift. Same index, same query — the other eight languages are suddenly reachable.',
+   f:async()=>{alpha.value=4; await runShift();}, t:4200},
+  {m:'Catalan never appears, at any α. Google does not publish this taxonomy in Catalan.',
+   f:async()=>{}, t:4000},
+  {m:'Second geometry. A category five levels deep in the product hierarchy.',
+   f:async()=>{tab(2); if(!CATS.length) await initHyper(); else await runHyper();}, t:4200},
+  {m:'Hyperbolic search walks inward and returns the ancestors. Flat search returns siblings.',
+   f:async()=>{}, t:4200},
+  {m:'Purple: the geodesic between two siblings dives inward, shallower than their parent.',
+   f:async()=>{}, t:4600},
+  {m:'Drop the prefetch to 10 and the rescore has nothing to work with — recall collapses.',
+   f:async()=>{pf.value=0; await runHyper();}, t:4000},
+  {m:'Widen it back to 1000. Cheap ANN for recall, exact geodesic for precision.',
+   f:async()=>{pf.value=4; await runHyper();}, t:4000},
+  {m:'Last: the radius was learned from links alone, never from depth labels.',
+   f:async()=>{tab(3); if(!AN) await initAnom();}, t:4200},
+  {m:'Where radius fights depth, the taxonomy is usually wrong. Hub nodes filed too deep.',
+   f:async()=>{}, t:4600},
+  {m:'Three artifacts: a bias diagnostic, one vector subtraction, prefetch-then-rescore.',
+   f:async()=>{}, t:4600},
+];
+
+async function autopilot(){
+  if(APon){APstop=true; return}
+  APon=true; APstop=false; apkey.textContent='STOP';
+  for(let i=0;i<SCRIPT.length&&!APstop;i++){
+    const s=SCRIPT[i];
+    apmsg.innerHTML=`<span class="tag">${i+1}/${SCRIPT.length}</span>${s.m}`;
+    try{ await s.f(); }catch(e){ /* keep the reel running on stage */ }
+    const t0=performance.now();
+    while(performance.now()-t0<s.t && !APstop){
+      apfill.style.width=((performance.now()-t0)/s.t*100).toFixed(1)+'%';
+      await sleep(60);
+    }
+  }
+  apfill.style.width='0';
+  apmsg.innerHTML= APstop ? 'Stopped. Press <b>space</b> to run again.'
+                          : 'Done. Press <b>space</b> to run again.';
+  apkey.textContent='SPACE'; APon=false;
+}
+
+addEventListener('keydown',e=>{
+  if(e.code==='Space' && e.target.tagName!=='INPUT' && e.target.tagName!=='SELECT'){
+    e.preventDefault(); autopilot();
+  }
+});
+
+/* ---------------------------- boot ---------------------------- */
+(async()=>{
+  META=await j('/api/meta');
+  mode.textContent=`${META.categories.toLocaleString()} categories · ${META.server_mode}`;
+  lang.innerHTML=META.langs.map(l=>`<option value="${l.code}"${l.code==='es-ES'?' selected':''}>${l.label}</option>`).join('');
+  sweepTable(META.shift_sweep); prefTable(META.hyperbolic); dimTable(META.poincare);
+  await runShift();
+})();
+</script>
+</body>
+</html>

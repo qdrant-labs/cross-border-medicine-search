@@ -1,0 +1,607 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Cross-border medicine lookup</title>
+<style>
+:root{
+  --bg:#08090d; --panel:#0e1017; --line:#1c2030; --line2:#262c40;
+  --fg:#e6e9f2; --dim:#767d96; --dim2:#4a5169;
+  --pl:#ff9f45; --es:#3ddc97; --nl:#c85fe0; --hot:#dc244c; --cool:#5b8cff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font:13px/1.45 ui-sans-serif,-apple-system,"SF Pro Text",Inter,system-ui,sans-serif}
+h1{font-size:15px;margin:0;letter-spacing:.2px;font-weight:600}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+
+header{display:flex;align-items:center;gap:18px;padding:12px 18px;
+  border-bottom:1px solid var(--line);background:linear-gradient(180deg,#10131c,#0b0d13)}
+header .sub{color:var(--dim);font-size:11.5px}
+.stats{margin-left:auto;display:flex;gap:16px}
+.stat{text-align:right}
+.stat b{display:block;font-size:14px;font-variant-numeric:tabular-nums}
+.stat span{font-size:10px;color:var(--dim2);text-transform:uppercase;letter-spacing:.7px}
+
+main{display:grid;grid-template-columns:300px 1fr 330px;gap:1px;background:var(--line);
+  min-height:calc(100vh - 49px)}
+section{background:var(--bg);padding:14px}
+.t{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--dim2);
+  margin:0 0 9px;font-weight:600}
+
+/* camera */
+#vidwrap{position:relative;border:1px solid var(--line2);border-radius:7px;
+  overflow:hidden;background:#000;aspect-ratio:4/3}
+video,#shot{width:100%;height:100%;object-fit:cover;display:block}
+#shot{display:none}
+#vidwrap.busy::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent,rgba(91,140,255,.22),transparent);
+  animation:scan 1s linear infinite}
+@keyframes scan{from{transform:translateY(-100%)}to{transform:translateY(100%)}}
+.btn{display:block;width:100%;margin-top:8px;padding:9px;border-radius:6px;
+  border:1px solid var(--line2);background:#141826;color:var(--fg);cursor:pointer;
+  font-size:12px;font-weight:500}
+.btn:hover{border-color:#39405c;background:#1a1f31}
+.btn.p{background:var(--hot);border-color:var(--hot);color:#fff}
+.btn.p:hover{background:#ef2f58}
+.btn:disabled{opacity:.45;cursor:default}
+
+.samples{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:9px}
+.samples img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:5px;
+  border:1px solid var(--line2);cursor:pointer;background:#fff}
+.samples img:hover{border-color:var(--cool)}
+
+#ocr{margin-top:11px;font-size:11px}
+#ocr div{display:flex;gap:7px;padding:2.5px 0;border-bottom:1px solid #14161f}
+#ocr .c{color:var(--dim2);font-variant-numeric:tabular-nums;flex:none;width:30px}
+#q{margin-top:9px;padding:8px;border-radius:5px;background:#101420;
+  border:1px solid var(--line2);font-size:11px;color:var(--cool);word-break:break-word}
+
+/* controls */
+.ctrl{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;
+  padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-radius:7px}
+.ctrl label{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--dim2)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 12px}
+.chips button{border:1px solid var(--line2);background:#11141e;color:var(--dim);
+  border-radius:12px;padding:3px 9px;font:inherit;font-size:10.5px;cursor:pointer}
+.chips button:hover{border-color:var(--cool);color:var(--fg)}
+#qtext{flex:1;min-width:240px;background:#11141e;border:1px solid var(--line2);
+  border-radius:5px;color:var(--fg);padding:7px 10px;font:inherit;font-size:12px}
+#qtext:focus{outline:0;border-color:var(--cool)}
+.seg{display:flex;border:1px solid var(--line2);border-radius:5px;overflow:hidden}
+.seg button{border:0;background:#11141e;color:var(--dim);padding:5px 10px;cursor:pointer;
+  font-size:11px;font-family:ui-monospace,Menlo,monospace}
+.seg button+button{border-left:1px solid var(--line2)}
+.seg button.on{background:var(--hot);color:#fff}
+.seg.b button.on{background:var(--cool)}
+
+/* results */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.col{border:1px solid var(--line);border-radius:7px;background:var(--panel);overflow:hidden}
+.col h3{margin:0;padding:9px 11px;font-size:11px;font-weight:600;
+  border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.col.off h3{background:rgba(220,36,76,.09)}
+.col.on h3{background:rgba(61,220,151,.09)}
+.pill{margin-left:auto;font-size:10px;padding:2px 7px;border-radius:20px;
+  background:#1b2030;color:var(--dim);font-family:ui-monospace,Menlo,monospace}
+.hit{display:flex;gap:9px;padding:8px 11px;border-bottom:1px solid #13151e;align-items:flex-start}
+.hit img{width:46px;height:46px;object-fit:cover;border-radius:4px;background:#fff;flex:none}
+.hit .ph{width:46px;height:46px;border-radius:4px;background:#12151f;flex:none}
+.hit .b{font-size:12px;font-weight:500;line-height:1.3}
+.hit .m{font-size:10px;color:var(--dim);margin-top:2px}
+.flag{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:700;letter-spacing:.5px}
+.flag.pl{background:rgba(255,159,69,.16);color:var(--pl)}
+.flag.es{background:rgba(61,220,151,.16);color:var(--es)}
+.flag.nl{background:rgba(200,95,224,.16);color:var(--nl)}
+.rx{font-size:9px;color:var(--dim2)}
+/* country-of-origin readout: what the box said, and which words said it */
+#det{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:10.5px;
+  margin:-6px 0 11px;color:var(--dim);min-height:17px}
+#det .big{font-size:11px;font-weight:700;letter-spacing:.6px;padding:2px 7px;
+  border-radius:4px}
+#det .ev{font-family:ui-monospace,Menlo,monospace;font-size:9.5px;color:var(--dim2);
+  border:1px solid var(--line);border-radius:3px;padding:1px 5px}
+#det .warn{color:var(--pl)}
+.hd{font-size:9px;color:var(--cool)}
+.atc{font-family:ui-monospace,Menlo,monospace;font-size:9.5px;color:var(--dim2)}
+
+/* geometry */
+canvas{width:100%;border:1px solid var(--line);border-radius:7px;background:#0b0d14;
+  display:block;margin-bottom:5px}
+.cap{font-size:10px;color:var(--dim2);margin:0 0 13px;line-height:1.4}
+.bar{display:flex;align-items:center;gap:7px;margin:4px 0;font-size:10.5px}
+.bar .k{width:42px;color:var(--dim);font-family:ui-monospace,Menlo,monospace;flex:none}
+.bar .track{flex:1;height:13px;background:#12151f;border-radius:3px;overflow:hidden}
+.bar .fill{height:100%;background:linear-gradient(90deg,#3ddc97,#2a9d6d)}
+.bar .fill.warn{background:linear-gradient(90deg,#ff9f45,#c2701f)}
+.bar .v{width:40px;text-align:right;color:var(--dim);font-variant-numeric:tabular-nums;flex:none}
+.note{font-size:10px;color:var(--dim2);border-left:2px solid var(--line2);
+  padding-left:8px;margin-top:10px;line-height:1.5}
+#path{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+#path span{font-family:ui-monospace,Menlo,monospace;font-size:10px;padding:2px 6px;
+  border-radius:3px;background:#141824;border:1px solid var(--line2);color:var(--dim)}
+#path span:last-child{background:rgba(91,140,255,.16);color:var(--cool);border-color:#2f4272}
+
+/* retrieval-method comparison: full-width band under the three columns */
+#sparsewrap{grid-column:1/-1;border-top:1px solid var(--line)}
+.methods{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:11px}
+.methods .m4{border:1px solid var(--line2);border-radius:7px;padding:10px;min-width:0}
+.methods .m4 h4{margin:0 0 8px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--dim);display:flex;justify-content:space-between;gap:8px;align-items:baseline;
+  white-space:nowrap}
+.methods .m4.win{border-color:#2f4272;background:rgba(91,140,255,.05)}
+.methods .m4 h4 b{color:var(--cool);font-weight:600;font-size:9px}
+.methods .row{font-size:11px;line-height:1.35;padding:6px 0;border-top:1px solid var(--line)}
+.methods .row:first-of-type{border-top:0}
+.methods .row .n{color:var(--fg)}
+.methods .row .c{font-family:ui-monospace,Menlo,monospace;font-size:9.5px;color:var(--dim)}
+.methods .row.hit .n{color:var(--es)}
+.methods .empty{font-size:11px;color:var(--pl);padding:10px 0;line-height:1.4}
+@media(max-width:900px){.methods{grid-template-columns:repeat(2,1fr)}}
+</style>
+
+<header>
+  <h1>Cross-border medicine lookup</h1>
+  <span class="sub">Polish or Dutch box &rarr; Spanish shelf &middot; joined on ATC, never on brand</span>
+  <div class="stats" id="stats"></div>
+</header>
+
+<main>
+<!-- ---------------- camera ---------------- -->
+<section>
+  <p class="t">1 &middot; Camera</p>
+  <div id="vidwrap"><video id="vid" playsinline muted></video><img id="shot"></div>
+  <button class="btn p" id="scan">Scan box</button>
+  <button class="btn" id="cam">Enable camera</button>
+  <p class="t" style="margin-top:15px">Or use a cached box</p>
+  <div class="samples" id="samples"></div>
+  <div id="ocr"></div>
+  <div id="q" style="display:none"></div>
+</section>
+
+<!-- ---------------- results ---------------- -->
+<section>
+  <div class="ctrl">
+    <input id="qtext" placeholder="or type a product: Apap, Paracetamolum&hellip;" autocomplete="off">
+    <div class="seg" id="qlang"></div>
+  </div>
+  <div id="det"></div>
+  <div class="chips" id="sugg"></div>
+  <div class="ctrl">
+    <label>Matryoshka dim</label>
+    <div class="seg b" id="dims"></div>
+    <label style="margin-left:6px">Show</label>
+    <div class="seg" id="tgt"></div>
+    <label style="margin-left:6px">ATC rerank</label>
+    <div class="seg" id="rrk">
+      <button data-v="" class="on">off</button>
+      <button data-v="1">hyperbolic</button>
+    </div>
+    <label style="margin-left:6px" id="pflabel">Query plan</label>
+    <div class="seg" id="pf">
+      <button data-v="" class="on">single stage</button>
+      <button data-v="1">64d prefetch</button>
+    </div>
+    <span class="pill mono" id="lat"></span>
+    <span class="note" id="qnote"></span>
+  </div>
+  <div class="cols">
+    <div class="col off"><h3>SHIFT off &middot; &alpha;=0 <span class="pill" id="p0"></span></h3><div id="r0"></div></div>
+    <div class="col on"><h3>SHIFT on &middot; &alpha;=1 <span class="pill" id="p1"></span></h3><div id="r1"></div></div>
+  </div>
+  <p class="note">Same query, same index, same model. The only difference is whether one
+  language-offset vector was subtracted first. Nothing was retrained.</p>
+</section>
+
+<!-- ---------------- geometry ---------------- -->
+<section>
+  <p class="t">ATC path</p>
+  <div id="path"></div>
+
+  <p class="t">Hyperbolic vs Euclidean</p>
+  <canvas id="cp" width="600" height="600"></canvas>
+  <p class="cap"><b style="color:var(--fg)">Poincar&eacute; disk.</b> Radius = how specific
+  the code is. Level 1 sits near the centre, individual substances at the rim.</p>
+  <canvas id="ce" width="600" height="600"></canvas>
+  <p class="cap"><b style="color:var(--fg)">Euclidean.</b> Same tree, same training budget.
+  The levels collapse into each other.</p>
+
+  <p class="t">Matryoshka: bytes vs cross-border hits</p>
+  <div id="mrl"></div>
+  <p class="note" id="mrlnote"></p>
+</section>
+
+<!-- ------------- retrieval methods -------------
+     Full width, below the three columns: four retrievers only read as a
+     comparison if they are genuinely side by side, and 330px of sidebar
+     truncates every brand name to an ellipsis. -->
+<section id="sparsewrap" style="display:none">
+  <p class="t">Same query, four retrievers</p>
+  <div class="note" id="sparsenote"></div>
+  <div class="methods" id="methods"></div>
+  <p class="note" style="margin-top:12px">Over 300 Polish queries: dense+SHIFT
+  <b style="color:var(--fg)">0.827</b> at top&#8209;1, BM25 <b>0.230</b>,
+  SPLADE <b>0.770</b>, and RRF fusion of dense with SPLADE <b style="color:var(--es)">0.837</b>.
+  BM25 loses the way the theory predicts — on 160 of those 300 queries it shares
+  <i>no term at all</i> with any Spanish document, so there is nothing to rank. SPLADE does
+  not lose: term expansion reaches across the vocabulary gap that exact matching cannot, and
+  fusing it with dense beats dense alone at every cut&nbsp;(0.837&nbsp;/&nbsp;0.920&nbsp;/&nbsp;0.970).
+  That is a real result and it is not what was expected — Splade_PP is English&#8209;trained
+  and running on Spanish and Polish registry strings. The shipped path is still
+  dense&nbsp;+&nbsp;hyperbolic, because +0.010 at top&#8209;1 does not yet pay for a second
+  index and a 500&nbsp;MB model, but that is a cost argument now, not an accuracy one.
+  Green marks agreement with the dense top hit — the shipped answer, not an annotated
+  ground truth.</p>
+</section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+// Same origin normally. Set window.API_BASE before this script to point the
+// page at a server running elsewhere -- the demo laptop serves the API and the
+// UI together, but a browser sandbox may only be allowed to serve one of them.
+const API = window.API_BASE || "";
+// QLANG "" means "read the language off the box" -- the manual buttons are an
+// override for when the detector abstains, not the normal path.
+let META = null, DIM = 1024, TARGET = "", RERANK = "", PREFETCH = "",
+    QLANG = "", LAST = null, USED = "es";
+
+const fmt = n => n.toLocaleString("en-US");
+const LANGNAME = { pl:"polish", es:"spanish", nl:"dutch" };
+
+// ---------------------------------------------------------------- bootstrap
+async function boot(){
+  META = await (await fetch(API+"/api/med/meta")).json();
+  $("#stats").innerHTML = [
+    [fmt(META.n_docs), "documents"],
+    ...META.langs.map(l => [fmt(META.n_by_lang[l]), LANGNAME[l] || l]),
+    [META.n_atc, "atc codes"], [fmt(META.n_photos), "photos"],
+  ].map(([v,k]) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`).join("");
+
+  // Both language pickers are built from meta rather than hard-coded, so
+  // adding a registry to the corpus adds a button without touching the UI.
+  $("#qlang").innerHTML = `<button data-v="" class="on">auto</button>` +
+    META.langs.map(l => `<button data-v="${l}">${LANGNAME[l]||l}</button>`).join("");
+  $("#tgt").innerHTML = `<button data-v="" class="on">all</button>` + META.langs.map(l =>
+    `<button data-v="${l}">${LANGNAME[l]||l} only</button>`).join("");
+
+  $("#dims").innerHTML = META.dims.map(d =>
+    `<button data-v="${d}" class="${d===DIM?"on":""}">${d}</button>`).join("");
+  wireSeg("#dims", v => { DIM = +v; if (LAST) run(LAST); drawMRL(); });
+  wireSeg("#tgt", v => { TARGET = v; if (LAST) run(LAST); });
+  wireSeg("#rrk", v => { RERANK = v; if (LAST) run(LAST); });
+  // Two-stage retrieval, both stages server-side: the first 64 coordinates of
+  // the same vector pick a wide shortlist, full width reorders it. The results
+  // should barely move -- that is the claim being demonstrated, not a bug.
+  wireSeg("#pf", v => { PREFETCH = v; if (LAST) run(LAST); });
+  $("#pflabel").title = $("#pf").title =
+    `${META.prefetch.dim}d prefetch, ${META.prefetch.factor}× overfetch`;
+  // Which language the query is written in. It picks the SHIFT offset and the
+  // registry the rerank anchor is resolved against -- a Spanish query must not
+  // be corrected with the Polish offset, because Spanish is the pivot, and a
+  // Dutch query must get the Dutch offset and not the Polish one. On "auto"
+  // this is read off the text itself and these buttons only serve to contradict
+  // the detector, which is worth being able to do live.
+  wireSeg("#qlang", v => { QLANG = v; loadSuggestions(); if (LAST) run(LAST); });
+
+  $("#qtext").onkeydown = e => {
+    if (e.key !== "Enter") return;
+    const t = e.target.value.trim();
+    if (t) run(t);
+  };
+  // Detect while typing, not only on Enter. The detector is a token count over
+  // an in-memory table, so this costs nothing, and watching the country flip
+  // mid-word is the clearest way to show what it is keying on: "Nurofen" alone
+  // is ambiguous between two registries, "Nurofen voor" is not.
+  let tdeb;
+  $("#qtext").oninput = e => {
+    const t = e.target.value.trim();
+    clearTimeout(tdeb);
+    if (!t) return void ($("#det").innerHTML = "");
+    tdeb = setTimeout(async () => showDetection(await detect(t)), 200);
+  };
+
+  $("#sparsewrap").style.display = META.sparse ? "" : "none";
+
+  drawMRL();
+  loadSamples();
+  loadSuggestions();
+  drawGeometry("");
+}
+
+function wireSeg(sel, cb){
+  $(sel).onclick = e => {
+    const b = e.target.closest("button"); if (!b) return;
+    [...$(sel).children].forEach(x => x.classList.toggle("on", x === b));
+    cb(b.dataset.v);
+  };
+}
+
+// Pre-ranked queries that show the off/on contrast clearly, in whichever
+// language is currently selected. They are re-fetched when the language
+// changes because the ranking is per language: a Dutch query that works
+// without any correction would show two identical panels, and those are
+// exactly the ones the picker filters out.
+// On "auto" there is no selected language to draw suggestions for, so fall back
+// to the first non-pivot registry -- the pivot has no offset and would offer an
+// empty list by construction.
+const suggLang = () => QLANG || META.langs.find(l => l !== META.pivot) || META.pivot;
+
+let SUGG = [];
+async function loadSuggestions(){
+  const d = await (await fetch(`${API}/api/med/suggestions?n=8&qlang=${suggLang()}`)).json();
+  SUGG = d.queries;
+  // Index into SUGG rather than the text itself: product names contain quotes
+  // and esc() only handles & < >, so embedding them would break the attribute.
+  $("#sugg").innerHTML = SUGG.map((q, i) =>
+    `<button data-i="${i}" title="${esc(q.atc)} · +${q.gain} spanish in top 10">${esc(q.text.split(",")[0])}</button>`
+  ).join("") || `<div class="note">no pre-ranked queries for ${LANGNAME[suggLang()]||suggLang()} — ${
+    suggLang() === META.pivot ? "it is the pivot, so there is no offset to demonstrate" : "run pick_demo_queries.py"}</div>`;
+  $("#sugg").onclick = e => {
+    const b = e.target.closest("button"); if (!b) return;
+    const t = SUGG[+b.dataset.i].text;
+    $("#qtext").value = t;
+    run(t);
+  };
+}
+
+// ---------------------------------------------------------------- samples
+async function loadSamples(){
+  const man = await (await fetch(API+"/med_img/manifest.json")).json();
+  const keys = Object.keys(man).filter(k => man[k].kind === "materialas").slice(0, 9);
+  $("#samples").innerHTML = keys.map(k =>
+    // crossorigin so the click handler can re-fetch the same bytes as a blob.
+    // Without it the <img> caches an opaque response and the later fetch() is
+    // refused -- only visible when the UI and the API are on different ports.
+    `<img crossorigin="anonymous" src="${API}/med_img/${man[k].file}" title="${man[k].brand}" data-f="${man[k].file}">`).join("");
+  $("#samples").onclick = e => {
+    if (e.target.tagName !== "IMG") return;
+    $("#vid").style.display = "none";
+    $("#shot").style.display = "block";
+    $("#shot").src = e.target.src;
+    scanBlobs([fetch(e.target.src).then(r => r.blob())]);
+  };
+}
+
+// ---------------------------------------------------------------- camera
+$("#cam").onclick = async () => {
+  try{
+    const s = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:"environment", width:{ideal:1920} }, audio:false });
+    $("#vid").srcObject = s; await $("#vid").play();
+    $("#vid").style.display = "block"; $("#shot").style.display = "none";
+    $("#cam").textContent = "Camera live";
+  }catch(e){ $("#cam").textContent = "Camera blocked — use cached boxes"; }
+};
+
+// A carton under room light is a video, not a photograph: glare drifts and
+// focus hunts, so the brand line is legible in maybe one frame in five.
+// Grab a burst and let the server merge the readings.
+$("#scan").onclick = () => {
+  const v = $("#vid");
+  if (!v.srcObject) return alert("Enable the camera, or click a cached box below.");
+  const c = document.createElement("canvas");
+  c.width = v.videoWidth; c.height = v.videoHeight;
+  const g = c.getContext("2d");
+  const shots = [];
+  let i = 0;
+  const t = setInterval(() => {
+    g.drawImage(v, 0, 0);
+    shots.push(new Promise(res => c.toBlob(res, "image/jpeg", .92)));
+    if (++i === 5){ clearInterval(t); scanBlobs(shots); }
+  }, 180);
+};
+
+async function scanBlobs(promises){
+  $("#vidwrap").classList.add("busy");
+  const blobs = await Promise.all(promises);
+  const fd = new FormData();
+  blobs.forEach((b, i) => fd.append("frames", b, `f${i}.jpg`));
+  const t0 = performance.now();
+  const r = await fetch(`${API}/api/med/scan?alpha=1&dim=${DIM}&k=12&target=&qlang=${QLANG}`, {
+    method:"POST", body:fd });
+  $("#vidwrap").classList.remove("busy");
+  const d = await r.json();
+  if (d.error){ $("#ocr").innerHTML = `<div style="color:var(--pl)">${d.error}</div>`; return; }
+  $("#ocr").innerHTML = d.ocr.map(b =>
+    `<div><span class="c">${b.confidence.toFixed(2)}</span><span>${esc(b.text)}</span></div>`
+  ).join("");
+  $("#q").style.display = "block";
+  $("#q").textContent = d.query;
+  $("#lat").textContent = `${Math.round(performance.now()-t0)} ms`;
+  run(d.query);
+}
+
+// ---------------------------------------------------------------- search
+// Read the country of origin off the query text, and say so on screen.
+//
+// The detector abstains rather than guessing when its lead over the runner-up
+// is thin -- "NUROFEN" alone is sold in both Poland and the Netherlands and
+// there is nothing in those seven characters to separate them. Abstaining falls
+// back to the pivot, which is the only language with no offset, so an uncertain
+// detection degrades to plain unshifted retrieval rather than to a confident
+// correction in the wrong direction.
+async function detect(q){
+  if (QLANG) return { lang: QLANG, forced: true };
+  const d = await (await fetch(`${API}/api/med/detect?q=${encodeURIComponent(q)}`)).json();
+  return { ...d, lang: d.confident ? d.lang : META.pivot, abstained: !d.confident };
+}
+
+function showDetection(d){
+  const name = (LANGNAME[d.lang] || d.lang || "?").toUpperCase();
+  const badge = `<span class="big flag ${d.lang}">${name}</span>`;
+  if (d.forced){
+    $("#det").innerHTML = badge + `<span>language forced by hand — the detector is bypassed</span>`;
+    return;
+  }
+  if (d.abstained){
+    const alt = Object.entries(d.scores || {}).sort((a,b) => b[1]-a[1]).slice(0,2)
+      .map(([l,v]) => `${LANGNAME[l]||l} ${v.toFixed(2)}`).join(" vs ");
+    $("#det").innerHTML = badge + `<span class="warn">origin unclear (${alt}) — `
+      + `too close to call, falling back to ${LANGNAME[META.pivot]}: no offset subtracted</span>`;
+    return;
+  }
+  // The tokens that decided it, strongest first. This is the whole argument for
+  // a counting method over a model here -- it can show its work on stage.
+  $("#det").innerHTML = badge + `<span>origin read off the box</span>`
+    + (d.evidence || []).slice(0,4).map(e =>
+        `<span class="ev">${esc(e.token)} → ${e.lang} ${e.share.toFixed(2)}</span>`).join("");
+}
+
+async function run(q){
+  LAST = q;
+  const det = await detect(q);
+  USED = det.lang;
+  showDetection(det);
+  const t0 = performance.now();
+  const d = await (await fetch(`${API}/api/med/compare?q=${encodeURIComponent(q)}`
+    + `&dim=${DIM}&k=10&target=${TARGET}&qlang=${USED}`
+    + (RERANK ? "&rerank=true" : "") + (PREFETCH ? "&prefetch=true" : ""))).json();
+  $("#lat").textContent = `${Math.round(performance.now()-t0)} ms · dim ${DIM}`
+    + (PREFETCH ? ` · via ${META.prefetch.dim}d` : "");
+  // Spanish is the pivot the offsets were estimated against, so it needs no
+  // correction and the two panels are identical by construction. Say so --
+  // otherwise it reads as a broken slider.
+  $("#qnote").textContent = USED === META.pivot
+    ? `${LANGNAME[META.pivot]} is the pivot language — no offset to subtract, both panels match`
+    : "";
+  $("#r1").parentElement.querySelector("h3").firstChild.textContent =
+    `SHIFT on · α=${d.on.alpha} `;
+  render("#r0", "#p0", d.off);
+  render("#r1", "#p1", d.on);
+  const want = TARGET || META.pivot;
+  const top = (d.on.hits.find(h => h.lang === want) || d.on.hits[0]);
+  if (top) drawGeometry(top.atc);
+  if (META.sparse) runSparse(q, top ? top.atc : "");
+}
+
+function render(sel, pill, side){
+  const shown = side.hits;
+  // Without a filter the pill is the spillover number: how much of the list
+  // came back in the language you are actually shopping in.
+  const want = LANGNAME[TARGET || META.pivot] || (TARGET || META.pivot);
+  $(pill).textContent = TARGET
+    ? `top: ${side.top_atc || "—"}`
+    : `${Math.round(side.tgt_share*100)}% ${want}`;
+  $(sel).innerHTML = shown.map(h => `
+    <div class="hit">
+      ${h.photo ? `<img src="${API}/med_img/${h.photo}">` : `<div class="ph"></div>`}
+      <div>
+        <div class="b">${esc(h.brand)} <span class="flag ${h.lang}">${h.lang}</span></div>
+        <div class="m">${esc(h.text)}</div>
+        <div class="atc">${h.atc}${h.otc ? ` · <span class="rx">${esc(h.otc)}</span>` : ""
+        }${h.hyp_dist != null ? ` · <span class="hd">tree ${h.hyp_dist}</span>` : ""}</div>
+      </div>
+    </div>`).join("") || `<div class="hit m">nothing in this language</div>`;
+}
+
+const esc = s => (s||"").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+// ------------------------------------------------- retrieval-method compare
+const METHOD_LABEL = {
+  dense: "dense + SHIFT", bm25: "bm25", splade: "splade", fusion: "rrf fusion",
+};
+
+// gold comes from the dense result, so "match" marks agreement with the
+// shipped pipeline rather than a ground truth this panel independently knows.
+// Said plainly in the caption; it is the honest framing for a live query where
+// nobody has annotated the answer.
+async function runSparse(q, gold){
+  const el = $("#methods");
+  el.innerHTML = `<div class="note">scoring…</div>`;
+  let d;
+  try {
+    d = await (await fetch(`${API}/api/med/retrieval_compare?q=${encodeURIComponent(q)}`
+      + `&k=6&target=${TARGET || META.pivot}&qlang=${USED}&gold=${encodeURIComponent(gold||"")}`)).json();
+  } catch { el.innerHTML = ""; return; }
+  if (!d.available){ $("#sparsewrap").style.display = "none"; return; }
+
+  const tgt = LANGNAME[d.target] || d.target;
+  $("#sparsenote").innerHTML = d.matched_terms === 0
+    ? `<b style="color:var(--pl)">None</b> of the ${d.n_query_terms} words in this query
+       appear anywhere in the ${esc(tgt)} index. There is nothing for an inverted index
+       to match, so BM25 returns an empty list — that is the vocabulary gap, not a
+       tuning problem.`
+    : `<b style="color:var(--fg)">${d.matched_terms}</b> of ${d.n_query_terms} query
+       words appear somewhere in the ${esc(tgt)} index. Whatever BM25 finds, it finds
+       through those.`;
+
+  el.innerHTML = ["dense","bm25","splade","fusion"].map(name => {
+    const hits = d.methods[name] || [];
+    const body = hits.length
+      ? hits.map(h => `<div class="row ${h.match?"hit":""}">
+          <div class="n">${esc(h.brand)}</div>
+          <div class="c">${h.atc} · ${h.score}</div></div>`).join("")
+      : `<div class="empty">no shared terms — nothing to rank</div>`;
+    return `<div class="m4 ${name==="dense"?"win":""}">
+      <h4><span>${METHOD_LABEL[name]}</span>${name==="dense"?"<b>shipped</b>":""}</h4>
+      ${body}</div>`;
+  }).join("");
+}
+
+// ---------------------------------------------------------------- geometry
+async function drawGeometry(atc){
+  const d = await (await fetch(`${API}/api/med/geometry?atc=${encodeURIComponent(atc)}`)).json();
+  $("#path").innerHTML = d.path.map(p =>
+    `<span title="${esc(p.name)}">${p.code}</span>`).join("");
+  disk($("#cp"), d.nodes, "poincare", true);
+  disk($("#ce"), d.nodes, "euclidean", false);
+}
+
+const LEVEL_C = ["#5b8cff","#7d6bff","#c85fe0","#ff6fa0","#ff9f45"];
+
+function disk(cv, nodes, key, ring){
+  const g = cv.getContext("2d"), W = cv.width, H = cv.height;
+  g.clearRect(0,0,W,H);
+  const cx = W/2, cy = H/2;
+  let R = W*0.46;
+  if (!ring){
+    const m = Math.max(...nodes.map(n => Math.hypot(...n[key]))) || 1;
+    R = W*0.46 / m;
+  }
+  if (ring){
+    g.strokeStyle = "#1c2030"; g.lineWidth = 1;
+    for (const f of [.25,.5,.75,1]){
+      g.beginPath(); g.arc(cx,cy,R*f,0,7); g.stroke();
+    }
+  }
+  for (const n of nodes){
+    const [x,y] = n[key];
+    const px = cx + x*R, py = cy - y*R;
+    const lv = (n.level||1) - 1;
+    g.beginPath();
+    g.arc(px, py, n.on_path ? 5 : 1.9, 0, 7);
+    g.fillStyle = n.on_path ? "#fff" : LEVEL_C[lv] + "b0";
+    g.fill();
+    if (n.on_path){
+      g.strokeStyle = "#5b8cff"; g.lineWidth = 2; g.stroke();
+    }
+  }
+}
+
+// ---------------------------------------------------------------- matryoshka
+function drawMRL(){
+  const a = META.matryoshka.arctic_mrl, e = META.matryoshka.e5_control;
+  const full = a[String(META.dims[0])].tgt_hits_per_query;
+  const rows = META.dims.map(d => {
+    const v = a[String(d)].tgt_hits_per_query;
+    return { k:`${d}d`, v, pct:v/full, bytes:d*4, warn:d < 256 };
+  });
+  $("#mrl").innerHTML = rows.map(r => `
+    <div class="bar">
+      <span class="k">${r.k}</span>
+      <span class="track"><span class="fill ${r.warn?"warn":""}"
+        style="width:${(r.pct*100).toFixed(1)}%"></span></span>
+      <span class="v">${r.bytes}B</span>
+    </div>`).join("");
+  const a256 = a["256"].tgt_hits_per_query / full;
+  const eDims = Object.keys(e).map(Number).sort((x,y) => y-x);
+  const e256 = e["256"].tgt_hits_per_query / e[String(eDims[0])].tgt_hits_per_query;
+  $("#mrlnote").innerHTML =
+    `At 256 dimensions Arctic keeps <b style="color:var(--es)">${(a256*100).toFixed(0)}%</b>
+     of its cross-border hits for a quarter of the bytes. The same cut on a model
+     without MRL keeps <b style="color:var(--pl)">${(e256*100).toFixed(0)}%</b>.
+     Below 256 Arctic falls off too — that is where Snowflake stopped training the
+     objective, and the guarantee stops with it.`;
+}
+
+boot();
+</script>

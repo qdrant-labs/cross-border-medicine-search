@@ -1,0 +1,60 @@
+{
+ "arctic_mrl": {
+  "1024": {
+   "n_queries": 2568,
+   "recall_atc": 0.9961,
+   "tgt_hits_per_query": 0.558,
+   "bytes_per_vector": 4096
+  },
+  "512": {
+   "n_queries": 2568,
+   "recall_atc": 0.9965,
+   "tgt_hits_per_query": 0.57,
+   "bytes_per_vector": 2048
+  },
+  "256": {
+   "n_queries": 2568,
+   "recall_atc": 0.9965,
+   "tgt_hits_per_query": 0.584,
+   "bytes_per_vector": 1024
+  },
+  "128": {
+   "n_queries": 2568,
+   "recall_atc": 0.9945,
+   "tgt_hits_per_query": 0.481,
+   "bytes_per_vector": 512
+  },
+  "64": {
+   "n_queries": 2568,
+   "recall_atc": 0.9836,
+   "tgt_hits_per_query": 0.49,
+   "bytes_per_vector": 256
+  }
+ },
+ "e5_control": {
+  "384": {
+   "n_queries": 2568,
+   "recall_atc": 0.9836,
+   "tgt_hits_per_query": 0.197,
+   "bytes_per_vector": 1536
+  },
+  "256": {
+   "n_queries": 2568,
+   "recall_atc": 0.9825,
+   "tgt_hits_per_query": 0.169,
+   "bytes_per_vector": 1024
+  },
+  "128": {
+   "n_queries": 2568,
+   "recall_atc": 0.979,
+   "tgt_hits_per_query": 0.089,
+   "bytes_per_vector": 512
+  },
+  "64": {
+   "n_queries": 2568,
+   "recall_atc": 0.9517,
+   "tgt_hits_per_query": 0.04,
+   "bytes_per_vector": 256
+  }
+ }
+}

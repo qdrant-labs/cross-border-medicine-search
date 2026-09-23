@@ -1,0 +1,19 @@
+qdrant-client>=1.16
+sentence-transformers>=3.0
+torch>=2.0
+numpy>=1.24
+fastapi>=0.110
+uvicorn>=0.27
+
+# Medicine demo: sparse and late-interaction retrievers (BM25, SPLADE, miniCOIL,
+# ColBERT). Only the evaluations and build_sparse.py import these -- the shipped
+# path is dense + hyperbolic rerank and runs without fastembed.
+fastembed>=0.7
+pillow>=10.0
+
+# On-device OCR via Apple's Vision framework. macOS only, deliberately: the
+# camera path is built to run with the wifi off. Everything except
+# src/med/vision_ocr.py works on other platforms.
+pyobjc-framework-Vision>=10.0 ; sys_platform == "darwin"
+pyobjc-framework-Quartz>=10.0 ; sys_platform == "darwin"
+pyobjc-framework-Cocoa>=10.0 ; sys_platform == "darwin"

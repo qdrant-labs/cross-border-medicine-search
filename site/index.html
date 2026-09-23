@@ -1,0 +1,361 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cross-border medicine lookup — what we measured</title>
+<meta name="description" content="Multilingual retrieval across national medicine registries: SHIFT language offsets, Matryoshka truncation, hyperbolic reranking, and four retrievers measured against each other.">
+<style>
+:root{
+  --bg:#08090d; --panel:#0e1017; --line:#1c2030; --line2:#262c40;
+  --fg:#e6e9f2; --dim:#767d96; --dim2:#4a5169;
+  --pl:#ff9f45; --es:#3ddc97; --nl:#c85fe0; --hot:#dc244c; --cool:#5b8cff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font:13px/1.55 ui-sans-serif,-apple-system,"SF Pro Text",Inter,system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased}
+a{color:var(--cool)}
+.wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+header{border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,#10131c,#0b0d13);padding:52px 0 30px}
+h1{font-size:27px;margin:0 0 9px;letter-spacing:-.4px;font-weight:650}
+.sub{color:var(--dim);font-size:14px;max-width:660px;margin:0}
+.stats{display:flex;gap:26px;flex-wrap:wrap;margin-top:24px}
+.stat b{display:block;font-size:19px;font-variant-numeric:tabular-nums}
+.stat span{font-size:10px;color:var(--dim2);text-transform:uppercase;letter-spacing:.7px}
+section{padding:40px 0;border-bottom:1px solid var(--line)}
+h2{font-size:17px;margin:0 0 5px;font-weight:620;letter-spacing:-.2px}
+.lede{color:var(--dim);margin:0 0 22px;max-width:680px}
+h3{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--dim2);
+  margin:26px 0 10px;font-weight:600}
+table{border-collapse:collapse;width:100%;font-size:12px;
+  font-variant-numeric:tabular-nums}
+th{text-align:right;font-weight:600;color:var(--dim2);font-size:10px;
+  text-transform:uppercase;letter-spacing:.7px;padding:0 10px 7px;border-bottom:1px solid var(--line2)}
+th:first-child,td:first-child{text-align:left}
+td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right}
+tr.best td{background:rgba(61,220,151,.06)}
+tr.best td:first-child{box-shadow:inset 2px 0 0 var(--es)}
+.tag{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:700;letter-spacing:.5px}
+.tag.pl{background:rgba(255,159,69,.16);color:var(--pl)}
+.tag.nl{background:rgba(200,95,224,.16);color:var(--nl)}
+.tag.es{background:rgba(61,220,151,.16);color:var(--es)}
+.bar{display:inline-block;height:7px;border-radius:2px;background:var(--cool);
+  vertical-align:middle;margin-right:7px}
+.bar.v2{background:var(--pl)} .bar.v3{background:var(--es)}
+.note{font-size:11px;color:var(--dim2);border-left:2px solid var(--line2);
+  padding-left:11px;margin:18px 0 0;line-height:1.5;max-width:700px}
+.note b{color:var(--fg)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:13px;margin-top:6px}
+.card{border:1px solid var(--line2);border-radius:8px;padding:13px;background:var(--panel)}
+.card h4{margin:0 0 3px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;
+  color:var(--dim2);font-weight:600}
+.card .big{font-size:22px;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.card p{margin:6px 0 0;font-size:11px;color:var(--dim);line-height:1.45}
+.win{border-color:rgba(61,220,151,.4)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+canvas{width:100%;border:1px solid var(--line);border-radius:8px;background:#0b0d14;
+  display:block;aspect-ratio:1}
+.cap{font-size:10.5px;color:var(--dim2);margin:8px 0 0;line-height:1.45}
+.cap b{color:var(--fg)}
+footer{padding:34px 0 60px;color:var(--dim2);font-size:11px}
+code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;
+  background:#141824;border:1px solid var(--line2);border-radius:3px;padding:1px 5px}
+.surprise{border-left:2px solid var(--pl);padding-left:11px}
+@media(max-width:720px){.two{grid-template-columns:1fr}h1{font-size:22px}}
+</style>
+
+<header><div class="wrap">
+  <h1>Point a camera at a medicine box. Get the same molecule, in another country.</h1>
+  <p class="sub">Polish, Spanish and Dutch national registries joined on ATC code and never on brand
+  name — <b style="color:var(--fg)">Apap</b> and <b style="color:var(--fg)">ANTIDOL</b> are the same
+  drug and share no characters. This page is the measurement record behind that demo: what was tried,
+  what shipped, and the two results that came back against expectation.</p>
+  <div class="stats" id="stats"></div>
+</div></header>
+
+<div class="wrap">
+
+<section>
+  <h2>SHIFT: one subtraction instead of a retrained model</h2>
+  <p class="lede">Estimate a single offset vector per language as the mean gap to the pivot, then
+  subtract it: <code>indexed = embed(doc) − α · offset[lang]</code>. Nothing is retrained. Spanish is
+  the pivot, so it has no offset by construction. The measure that matters is
+  <b style="color:var(--fg)">cross-border hits</b> — how many results come back in the language you
+  are actually shopping in.</p>
+  <table id="sweep"></table>
+  <p class="note">Recall barely moves across the whole sweep; the offset is not finding new documents,
+  it is reordering which language surfaces. <b>α=0.75</b> is the measured peak for both source
+  languages and is what the demo ships. The two languages were aligned to Spanish independently —
+  there is no Polish↔Dutch offset anywhere, yet both land in the same corrected space.</p>
+</section>
+
+<section>
+  <h2>Matryoshka: a quarter of the bytes, none of the accuracy</h2>
+  <p class="lede">Truncating the leading dimensions and renormalising, against a same-size control
+  that was never trained for it.</p>
+  <div class="two">
+    <div><h3>arctic-embed-l-v2.0 · MRL-trained</h3><table id="mrl"></table></div>
+    <div><h3>multilingual-e5-small · control</h3><table id="e5"></table></div>
+  </div>
+  <div class="cards" id="mrlcards"></div>
+  <p class="note surprise"><b>This reads like a typo and is not.</b> Arctic's cross-border hits at 256
+  dimensions are <i>higher</i> than at 1024. The tail dimensions carry language-specific detail that
+  SHIFT is trying to remove anyway, so dropping them helps slightly. The control is what makes that
+  claim safe rather than anecdotal: same cut, no MRL objective, and it falls to 86%. Below 256 Arctic
+  degrades too — exactly where Snowflake documented the trained range ending.</p>
+</section>
+
+<section>
+  <h2>Four retrievers, same 300 queries</h2>
+  <p class="lede">Polish queries against Spanish documents, which is what the cross-border lookup
+  actually does. Fusion is reciprocal rank fusion, used because BM25 scores and cosines are not on a
+  shared scale.</p>
+  <table id="sparse"></table>
+  <p class="note surprise"><b>Half of this went as predicted and half did not.</b> BM25 fails the way
+  the theory says it must: on <b>160 of 300</b> queries it shares no term at all with any Spanish
+  document, so the result is empty rather than badly ranked. That is the vocabulary gap, and it is the
+  entire argument for dense retrieval here. But SPLADE does not fail — term expansion reaches across
+  that gap, and fusing it with dense beats dense alone at every cut. That was not the expected result,
+  and it holds despite Splade_PP being English-trained on Spanish and Polish text. The shipped path is
+  still dense + hyperbolic, because +0.010 at top-1 does not pay for a second index and a 500 MB
+  model — a cost decision, not an accuracy one.</p>
+</section>
+
+<section>
+  <h2>Hyperbolic space fits a drug classification tree</h2>
+  <p class="lede">ATC is a five-level hierarchy. Hyperbolic space has exponentially more room as
+  radius grows, which is the shape a tree needs; Euclidean space does not and has to crush the
+  levels together. Both embeddings below have the same dimensionality and the same training budget.</p>
+  <div class="two">
+    <div><canvas id="cp" width="620" height="620"></canvas>
+      <p class="cap"><b>Poincaré disk.</b> Radius encodes specificity: broad categories near the
+      centre, individual substances at the rim. Mean hyperbolic radius runs
+      <b>4.29 → 8.40</b> from level 1 to level 5, cleanly ordered.
+      <i>Plotted at hyperbolic distance from the origin, not raw coordinates —
+      in raw coordinates all five levels sit between 0.92 and 0.9994 of the boundary and the
+      structure is invisible. That crowding is the metric working, not a flaw.</i></p></div>
+    <div><canvas id="ce" width="620" height="620"></canvas>
+      <p class="cap"><b>Euclidean.</b> Same tree, same budget, plotted at its own norm — which is
+      already its metric, so no transform is applied. The levels interleave instead of separating:
+      there is not enough room out at the edge to keep them apart.</p></div>
+  </div>
+  <div class="cards" id="geocards"></div>
+  <p class="note">This is not decoration. The 10-dimensional Poincaré embedding is what reranks the
+  live results, and it fixes a specific error cosine cannot: for a paracetamol box it ranks
+  <b>ANTIDOL DUAL</b> (paracetamol <i>plus</i> ibuprofen, N02BE51) above plain <b>ANTIDOL</b>
+  (N02BE01). The strings are near-identical so no embedding separates them, but they are different
+  codes, and handing someone a combination product when they asked for one molecule is a real error.
+  Graded tree distance degrades in the order a pharmacist walks a shelf: same molecule, same chemical
+  subgroup, same therapeutic class.</p>
+</section>
+
+<section>
+  <h2>What was rejected, and why that matters</h2>
+  <p class="lede">Three things were built, measured, and not shipped. They are listed because a
+  pipeline is defined as much by what it leaves out.</p>
+  <div class="cards">
+    <div class="card"><h4>Late interaction (ColBERT)</h4><div class="big">0.972</div>
+      <p>vs 0.984 for dense+hyperbolic on real packaging OCR. MaxSim should tolerate noisy queries by
+      letting junk tokens take their best match — but carton junk is <i>other Spanish pharmaceutical
+      text</i>, which matches confidently in the wrong direction. Pooling dilutes it, so averaging is
+      the feature here, not the flaw.</p></div>
+    <div class="card"><h4>BM25 / lexical</h4><div class="big">0.230</div>
+      <p>160 of 300 queries share no term with any target document. Not a tuning problem — an empty
+      result set. Caveat: fastembed has no Polish stemmer, which understates it.</p></div>
+    <div class="card"><h4>Embedding-based language ID</h4><div class="big">0.947</div>
+      <p>The elegant option — score unshifted, since that is the space where languages have not yet
+      merged. A plain token-frequency vote gets <b style="color:var(--es)">0.987</b> on the same
+      carton photos, and every blend of the two was worse than the count alone.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Reading the country off the box</h2>
+  <p class="lede">A language picker is a lie about the product — nobody holding a carton first tells
+  the search engine what country they are standing in. It is also a live hazard: SHIFT applies a
+  per-language offset, so the wrong choice does not soften the result, it applies a Dutch-shaped
+  correction to a Polish vector.</p>
+  <div class="cards">
+    <div class="card win"><h4>Held-out registry text</h4><div class="big">0.999</div>
+      <p>Token-frequency vote, 1,200 held-out strings across three languages.</p></div>
+    <div class="card win"><h4>Real carton OCR</h4><div class="big">0.987</div>
+      <p>150 packaging photos through Apple Vision — the exact string the camera path produces.</p></div>
+    <div class="card"><h4>With abstain rule</h4><div class="big">1.000</div>
+      <p>Confidence = the winning vote's lead over the runner-up. At 0.2 it catches every error in
+      both tests while flagging 0.4% of queries.</p></div>
+  </div>
+  <p class="note">Abstaining falls back to the pivot — the one language with no offset — so
+  uncertainty degrades to plain unshifted retrieval rather than to a confident correction in the wrong
+  direction. The threshold was fitted, not chosen: every observed error sat below it.
+  <b>NUROFEN</b> alone correctly reads as uncertain, because it is genuinely sold in both Poland and
+  the Netherlands and there is nothing in those seven characters to separate them. Add one word —
+  <i>Nurofen voor</i> — and it commits. The carton figure is Spanish-only: every cached photo comes
+  from the Spanish registry, so this measures the false-positive rate on one language and leaves the
+  other two unmeasured.</p>
+</section>
+
+<footer class="wrap">
+  Measurements from the live demo's own artifacts — nothing on this page is re-derived or rounded by
+  hand. Registries: CIMA (Spain), Rejestr Produktów Leczniczych (Poland), CBG-MEB (Netherlands).
+  Embeddings: Snowflake arctic-embed-l-v2.0. Index: Qdrant. OCR: Apple Vision, on device.
+</footer>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const LANG = { pl:"polish", es:"spanish", nl:"dutch" };
+const f3 = n => n.toFixed(3);
+
+// Every number on this page is read from the artifacts the evaluation scripts
+// wrote. Nothing is hard-coded, so re-running an eval and redeploying updates
+// the page -- and a stale artifact shows up as a wrong number rather than as
+// prose quietly disagreeing with the data.
+Promise.all(["shift_sweep","matryoshka","sparse_eval","atc_results","geometry"]
+  .map(n => fetch(`data/${n}.json`).then(r => r.json()))).then(draw);
+
+function draw([sweep, mrl, sparse, geo, tree]){
+  // ---------------------------------------------------------------- header
+  const langs = Object.keys(sweep["0.0"]);
+  const nq = langs.reduce((a,l) => a + sweep["0.0"][l].n_queries, 0);
+  $("#stats").innerHTML = [
+    ["5,298","documents"], ["3","registries"], ["220","atc codes"],
+    [nq.toLocaleString(),"eval queries"], ["1,898","photos"],
+  ].map(([v,k]) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`).join("");
+
+  // ---------------------------------------------------------------- sweep
+  const alphas = Object.keys(sweep).sort((a,b) => +a - +b);
+  const peak = Math.max(...alphas.flatMap(a => langs.map(l => sweep[a][l].tgt_hits_per_query)));
+  $("#sweep").innerHTML =
+    `<tr><th>alpha</th>${langs.map(l =>
+      `<th>${LANG[l]||l} recall</th><th>${LANG[l]||l} cross-border hits</th>`).join("")}</tr>` +
+    alphas.map(a => {
+      // 0.75 is the shipped setting; marking it in the table rather than only
+      // in the prose keeps the claim and the evidence in the same place.
+      const best = a === "0.75" ? ' class="best"' : "";
+      return `<tr${best}><td>${a}${a==="0.75"?' <span class="tag es">shipped</span>':""}</td>` +
+        langs.map(l => {
+          const d = sweep[a][l];
+          return `<td>${f3(d.recall_atc)}</td><td>` +
+            `<span class="bar ${l==="nl"?"v2":""}" style="width:${Math.round(d.tgt_hits_per_query/peak*54)}px"></span>` +
+            `${d.tgt_hits_per_query.toFixed(3)}</td>`;
+        }).join("") + `</tr>`;
+    }).join("");
+
+  // ---------------------------------------------------------------- mrl
+  // `mark` only on the MRL model: the green row reads as "this is the good
+  // one", and 256 is only the good one where the objective was trained for it.
+  // Highlighting the same cut in the control would signal a win where the
+  // point being made is a loss.
+  const mrlTable = (obj, el, cls, mark) => {
+    const dims = Object.keys(obj).sort((a,b) => +b - +a);
+    const top = obj[dims[0]].tgt_hits_per_query;
+    $(el).innerHTML = `<tr><th>dim</th><th>bytes</th><th>recall</th><th>cross-border hits</th></tr>` +
+      dims.map(d => {
+        const r = obj[d], keep = r.tgt_hits_per_query / top;
+        return `<tr${(mark && d==="256")?' class="best"':""}><td>${d}</td>` +
+          `<td>${r.bytes_per_vector.toLocaleString()}</td><td>${f3(r.recall_atc)}</td>` +
+          `<td><span class="bar ${cls}" style="width:${Math.round(keep*46)}px"></span>` +
+          `${r.tgt_hits_per_query.toFixed(3)}</td></tr>`;
+      }).join("");
+    return { dims, top };
+  };
+  const a = mrlTable(mrl.arctic_mrl, "#mrl", "v3", true);
+  const e = mrlTable(mrl.e5_control, "#e5", "v2", false);
+  const pct = (o, k) => Math.round(o["256"].tgt_hits_per_query / o[k].tgt_hits_per_query * 100);
+  $("#mrlcards").innerHTML = `
+    <div class="card win"><h4>Arctic at 256 dims</h4>
+      <div class="big">${pct(mrl.arctic_mrl, a.dims[0])}%</div>
+      <p>of its cross-border hits, for a quarter of the bytes.</p></div>
+    <div class="card"><h4>Control at 256 dims</h4>
+      <div class="big">${pct(mrl.e5_control, e.dims[0])}%</div>
+      <p>Same truncation, model without an MRL objective.</p></div>
+    <div class="card"><h4>Storage saved</h4><div class="big">4×</div>
+      <p>${mrl.arctic_mrl[a.dims[0]].bytes_per_vector.toLocaleString()} B → ${mrl.arctic_mrl["256"].bytes_per_vector.toLocaleString()} B per vector.</p></div>`;
+
+  // ---------------------------------------------------------------- sparse
+  const order = ["dense","bm25","minicoil","splade","dense+bm25","dense+minicoil","dense+splade"];
+  const NOTE = {
+    dense:"arctic + SHIFT — the shipped path", bm25:"exact term match, IDF-weighted",
+    minicoil:"term weighting with word-sense resolution", splade:"learned term expansion (English-trained)",
+    "dense+bm25":"RRF fusion", "dense+minicoil":"RRF fusion", "dense+splade":"RRF fusion",
+  };
+  const top = Math.max(...order.filter(k => k in sparse).map(k => sparse[k]));
+  $("#sparse").innerHTML = `<tr><th>retriever</th><th>top-1</th><th></th></tr>` +
+    order.filter(k => k in sparse).map(k =>
+      `<tr${sparse[k]===top?' class="best"':""}><td>${k}</td><td>${f3(sparse[k])}</td>` +
+      `<td style="text-align:left;width:56%"><span class="bar ${k.includes("dense")?"":"v2"}" ` +
+      `style="width:${Math.round(sparse[k]/top*190)}px"></span>` +
+      `<span style="color:var(--dim2);font-size:11px">${NOTE[k]||""}</span></td></tr>`).join("");
+
+  // ---------------------------------------------------------------- geometry
+  $("#geocards").innerHTML = [
+    ["Poincaré 10d", geo.poincare_10.map, true], ["Euclidean 10d", geo.euclidean_10.map, false],
+    ["Poincaré 2d", geo.poincare_2.map, false], ["Euclidean 2d", geo.euclidean_2.map, false],
+  ].map(([k,v,w]) => `<div class="card${w?" win":""}"><h4>${k}</h4>` +
+    `<div class="big">${v.toFixed(4)}</div><p>mean average precision reconstructing the tree</p></div>`).join("");
+  plot("#cp", tree, "poincare", true);
+  plot("#ce", tree, "euclidean", false);
+}
+
+// Depth colours: centre-out on the disk should read as broad-to-specific, so
+// the ramp has to be monotonic in level rather than categorical.
+const DEPTH = ["#5b8cff","#39c0e8","#3ddc97","#ffc247","#ff7a45"];
+
+// Each embedding is drawn in its own distance function, and that choice needs
+// stating because it is doing real work here.
+//
+// Plotting raw Poincaré coordinates produces a ring and nothing else: the
+// hierarchy is genuinely present -- mean hyperbolic radius runs 4.29 → 8.40
+// from level 1 to level 5 -- but the ball's Euclidean norms for those same
+// points run 0.92 → 0.9994, so every level lands within 8% of the boundary and
+// the structure is invisible. That is not a defect in the embedding, it is what
+// the Poincaré metric does: distance to the rim grows without bound, which is
+// exactly the property that buys room for a tree.
+//
+// So the disk is drawn at radius proportional to *hyperbolic* distance from the
+// origin, preserving angle. The Euclidean panel is drawn at its own norm, which
+// is already its metric. Both are therefore shown under the distance they were
+// trained with, which is the only comparison that means anything -- and the
+// captions say so rather than letting the transform pass unmentioned.
+function plot(sel, tree, key, disk){
+  const c = $(sel), g = c.getContext("2d"), W = c.width;
+  const pts = tree[key];
+  const R = W/2 - 16, cx = W/2, cy = W/2;
+  g.fillStyle = "#0b0d14"; g.fillRect(0,0,W,W);
+
+  const radius = p => {
+    const n = Math.hypot(p[0], p[1]);
+    return disk ? 2 * Math.atanh(Math.min(n, 1 - 1e-12)) : n;
+  };
+  const maxR = Math.max(...pts.map(radius)) || 1;
+
+  g.strokeStyle = "#262c40"; g.lineWidth = 1;
+  g.beginPath(); g.arc(cx, cy, R, 0, 7); g.stroke();
+  g.strokeStyle = "#171b28";
+  for (let i=1;i<=4;i++){ g.beginPath(); g.arc(cx, cy, R*i/5, 0, 7); g.stroke(); }
+
+  // Deepest first, so the 13 level-1 nodes are not buried under 220 leaves.
+  pts.map((p,i) => i).sort((a,b) => tree.level[b] - tree.level[a]).forEach(i => {
+    const p = pts[i], lv = tree.level[i];
+    const ang = Math.atan2(p[1], p[0]), rr = radius(p) / maxR * R;
+    g.fillStyle = DEPTH[lv-1] || DEPTH[4];
+    g.globalAlpha = lv === 1 ? 1 : lv === 2 ? .85 : .55;
+    const dot = lv === 1 ? 5 : lv === 2 ? 3.2 : 1.9;
+    g.beginPath();
+    g.arc(cx + Math.cos(ang)*rr, cy + Math.sin(ang)*rr, dot, 0, 7);
+    g.fill();
+  });
+  g.globalAlpha = 1;
+
+  // Legend: the colour ramp is the whole claim, so it has to be readable
+  // without cross-referencing the prose.
+  g.font = "10px ui-sans-serif,system-ui,sans-serif";
+  for (let l=1;l<=5;l++){
+    const y = W - 14 - (5-l)*15;
+    g.fillStyle = DEPTH[l-1]; g.globalAlpha = 1;
+    g.beginPath(); g.arc(14, y-3, 3.4, 0, 7); g.fill();
+    g.fillStyle = "#767d96";
+    g.fillText(`level ${l}`, 23, y);
+  }
+}
+</script>
