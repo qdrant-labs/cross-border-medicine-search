@@ -139,33 +139,97 @@ def evaluate(qv, dv, docs, k=10, qlang="pl", target=PIVOT):
                    language. This is the spillover number: a spillover-bound
                    index keeps answering in the query's own language and scores
                    near zero here, however good its recall_atc looks.
+
+    ndcg20 / tlr20 are the SHIFT write-up's own two metrics, so the claim there
+    ("nDCG@20 rises 0.633 to 0.737, and TLR@20 jumps the most") can be checked
+    against this corpus in the units it was made in rather than by analogy.
+    Relevance is binary and comes from the ATC code, which is the only gold
+    label here -- there is no graded judgement to discount, so nDCG reduces to
+    rank-weighting a set of equally correct answers. Reported at 20 while the
+    two metrics above stay at k=10: every number already published from this
+    file was produced at 10 and silently moving it would rewrite them all.
     """
     # NumPy on Apple's Accelerate BLAS reports spurious "divide by zero" and
     # "overflow" from this matmul. The inputs are unit-norm with absmax ~0.18
     # and the outputs land in [0.003, 0.87]; float64 reproduces these metrics
     # exactly. The BLAS kernel is leaving FP status flags set, nothing more.
+    #
+    # Accelerate is also not bit-reproducible across processes -- its threaded
+    # reduction order varies -- so a query sitting on a near-tie at the rank-10
+    # boundary can fall either side of it. Measured on e5-large: 666 or 667
+    # target hits over 2,568 queries, run to run. That is +-0.0004 on
+    # tgt_hits_per_query, so treat the last published digit as noise rather
+    # than chasing a one-hit difference between two runs.
     with np.errstate(all="ignore"):
         return _eval_loop(qv, dv, docs, k, qlang, target)
+
+
+# The write-up's cutoff. Kept separate from `k` so the two are free to differ.
+K20 = 20
+# Discounts for ranks 1..20: 1/log2(rank+1), the standard DCG weighting.
+_DISC = 1.0 / np.log2(np.arange(2, K20 + 2))
 
 
 def _eval_loop(qv, dv, docs, k, qlang, target):
     langs = np.array([d["lang"] for d in docs])
     atcs = np.array([d["atc"] for d in docs])
+
+    # How many relevant documents exist at all, per ATC code. Needed for both
+    # the ideal DCG and the recall denominator, and constant across queries, so
+    # counted once here rather than per query.
+    n_atc, n_atc_tgt = {}, {}
+    for a, l in zip(atcs, langs):
+        n_atc[a] = n_atc.get(a, 0) + 1
+        if l == target:
+            n_atc_tgt[a] = n_atc_tgt.get(a, 0) + 1
+
+    # argpartition needs kth < len. The real corpus is 5,298 documents so this
+    # only binds in tests, but an IndexError there is a worse failure than a
+    # shorter list.
+    kk = min(K20, len(docs) - 1)
+    disc = _DISC[:kk]
+
     hits, tgt_hits, n = 0, 0, 0
+    ndcg_sum, tlr_sum, ceil_sum, n_tlr = 0.0, 0.0, 0.0, 0
     for qi in range(len(qv)):
         if docs[qi]["lang"] != qlang:
             continue
+        atc = docs[qi]["atc"]
         sims = dv @ qv[qi]
         sims[qi] = -1e9                      # never retrieve the query itself
         top = np.argpartition(-sims, k)[:k]
         top = top[np.argsort(-sims[top])]
-        same = atcs[top] == docs[qi]["atc"]
+        same = atcs[top] == atc
         hits += int(same.any())
         tgt_hits += int(((langs[top] == target) & same).sum())
         n += 1
+
+        # --- the write-up's two metrics, at 20 ---
+        t20 = np.argpartition(-sims, kk)[:kk]
+        t20 = t20[np.argsort(-sims[t20])]
+        rel = atcs[t20] == atc
+        # Relevant docs excluding the query itself, which was scored out above.
+        R = n_atc[atc] - 1
+        if R > 0:
+            idcg = disc[:min(R, kk)].sum()
+            ndcg_sum += float(disc[rel].sum() / idcg)
+
+        R_t = n_atc_tgt.get(atc, 0) - (1 if docs[qi]["lang"] == target else 0)
+        if R_t > 0:
+            # Plain recall: found in the top 20, over all that exist. Not
+            # capped at 20, so an ATC with 40 Spanish products cannot score 1
+            # however good the ranking is -- `tlr20_ceiling` below is the mean
+            # best-possible score and is what tlr20 should be read against.
+            tlr_sum += float(((langs[t20] == target) & rel).sum()) / R_t
+            ceil_sum += min(R_t, kk) / R_t
+            n_tlr += 1
+
     return {"n_queries": n,
             "recall_atc": round(hits / max(n, 1), 4),
-            "tgt_hits_per_query": round(tgt_hits / max(n, 1), 3)}
+            "tgt_hits_per_query": round(tgt_hits / max(n, 1), 3),
+            "ndcg20": round(ndcg_sum / max(n, 1), 4),
+            "tlr20": round(tlr_sum / max(n_tlr, 1), 4),
+            "tlr20_ceiling": round(ceil_sum / max(n_tlr, 1), 4)}
 
 
 def main():

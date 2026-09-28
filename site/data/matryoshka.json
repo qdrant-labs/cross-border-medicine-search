@@ -56,5 +56,31 @@
    "tgt_hits_per_query": 0.04,
    "bytes_per_vector": 256
   }
+ },
+ "bekko_mrl": {
+  "384": {
+   "n_queries": 2568,
+   "recall_atc": 0.9938,
+   "tgt_hits_per_query": 0.319,
+   "bytes_per_vector": 1536
+  },
+  "256": {
+   "n_queries": 2568,
+   "recall_atc": 0.9938,
+   "tgt_hits_per_query": 0.329,
+   "bytes_per_vector": 1024
+  },
+  "128": {
+   "n_queries": 2568,
+   "recall_atc": 0.9926,
+   "tgt_hits_per_query": 0.325,
+   "bytes_per_vector": 512
+  },
+  "64": {
+   "n_queries": 2568,
+   "recall_atc": 0.9922,
+   "tgt_hits_per_query": 0.345,
+   "bytes_per_vector": 256
+  }
  }
 }

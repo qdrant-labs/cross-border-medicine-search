@@ -53,6 +53,7 @@ tr.best td:first-child{box-shadow:inset 2px 0 0 var(--es)}
 .card p{margin:6px 0 0;font-size:11px;color:var(--dim);line-height:1.45}
 .win{border-color:rgba(61,220,151,.4)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px}
 canvas{width:100%;border:1px solid var(--line);border-radius:8px;background:#0b0d14;
   display:block;aspect-ratio:1}
 .cap{font-size:10.5px;color:var(--dim2);margin:8px 0 0;line-height:1.45}
@@ -61,7 +62,31 @@ footer{padding:34px 0 60px;color:var(--dim2);font-size:11px}
 code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;
   background:#141824;border:1px solid var(--line2);border-radius:3px;padding:1px 5px}
 .surprise{border-left:2px solid var(--pl);padding-left:11px}
-@media(max-width:720px){.two{grid-template-columns:1fr}h1{font-size:22px}}
+.live{border:1px solid var(--line2);border-radius:10px;padding:15px;background:var(--panel)}
+.live .row{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.live input#q{flex:1;min-width:240px;background:#0b0d14;border:1px solid var(--line2);
+  border-radius:6px;padding:9px 11px;color:var(--fg);font:inherit;font-size:12.5px}
+.live input#q:focus{outline:none;border-color:var(--es)}
+.live button{background:#1a1f2e;border:1px solid var(--line2);color:var(--fg);
+  border-radius:6px;padding:9px 15px;font:inherit;font-size:12px;cursor:pointer}
+.live button:hover{border-color:var(--es)}
+.live button:disabled{opacity:.5;cursor:default}
+.chip{font-size:11px!important;padding:5px 9px!important;display:inline-flex;gap:5px;align-items:center}
+.fails{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:700;
+  background:rgba(255,159,69,.16);color:var(--pl)}
+.live label{font-size:11px;color:var(--dim2);display:flex;gap:7px;align-items:center}
+.live label b{color:var(--fg);font-variant-numeric:tabular-nums;min-width:26px}
+.live select{background:#0b0d14;border:1px solid var(--line2);color:var(--fg);
+  border-radius:5px;padding:5px 7px;font:inherit;font-size:11px}
+.live input[type=range]{accent-color:var(--es);width:110px}
+.stat{font-size:11px;color:var(--dim2);margin:0;line-height:1.5}
+.hit{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:12px}
+.hit .sc{color:var(--dim2);font-variant-numeric:tabular-nums;min-width:46px}
+.hit .nm{flex:1}
+.hit .atc{color:var(--dim2);font-family:ui-monospace,Menlo,monospace;font-size:10.5px}
+.hit.match .atc{color:var(--es)}
+.dim2{font-size:11px;color:var(--dim2)}
+@media(max-width:720px){.two,.three{grid-template-columns:1fr}h1{font-size:22px}}
 </style>
 
 <header><div class="wrap">
@@ -74,6 +99,55 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;
 </div></header>
 
 <div class="wrap">
+
+<section>
+  <h2>Run it here, with no server</h2>
+  <p class="lede">The Spanish register, 1,248 products, as a 624 KB file. Your browser embeds the
+  query and does the search — nothing is sent anywhere.</p>
+
+  <div class="live">
+    <div class="row">
+      <input id="q" placeholder="Type a Polish or Dutch medicine, e.g. Apap, Paracetamolum, Tabletki powlekane" autocomplete="off">
+      <button id="go">Search</button>
+    </div>
+    <div class="row chips">
+      <span class="dim2">Try:</span>
+      <button class="chip" data-l="pl" data-q="Apap, Paracetamolum, Tabletki powlekane">Apap <span class="tag pl">pl</span></button>
+      <button class="chip" data-l="pl" data-q="Cialis, Tadalafilum, Tabletki powlekane">Cialis <span class="tag pl">pl</span></button>
+      <button class="chip" data-l="pl" data-q="Metformax 500, Metformini hydrochloridum, Tabletki">Metformax <span class="tag pl">pl</span></button>
+      <button class="chip" data-l="pl" data-q="Glucophage XR, Metformini hydrochloridum, Tabletki o przedłużonym uwalnianiu">Glucophage XR <span class="tag pl">pl</span> <span class="fails">fails</span></button>
+    </div>
+    <div class="row">
+      <label>Query language
+        <select id="lang"><option value="pl">Polish</option><option value="nl">Dutch</option>
+          <option value="es">Spanish (pivot — no offset)</option></select></label>
+      <label>SHIFT α <b id="av">0.75</b>
+        <input type="range" id="alpha" min="0" max="1" step="0.25" value="0.75"></label>
+    </div>
+    <p id="status" class="stat">Model loads on first search — about 199 MB from the Hugging Face CDN,
+    cached afterwards. Everything below this box already works without it.</p>
+    <div id="results"></div>
+  </div>
+
+  <p class="note">Drag <b>α</b> to 0 and search again. Every result stays Spanish — this index holds
+  nothing else — but the <i>molecule</i> drifts, because the query vector is still sitting in the
+  Polish region of the space. Measured over all 2,568 Polish records: top-1 lands on the correct
+  molecule <b>73.9%</b> of the time at α=0 and <b>80.7%</b> at α=0.75. The offset is not fetching new
+  documents, it is fixing which ones rank first.</p>
+  <p class="note surprise"><b>One of the examples above is wrong on purpose.</b> Glucophage XR returns
+  a methylphenidate tablet: at 256 dimensions <code>o przedłużonym uwalnianiu</code> and
+  <code>liberación prolongada</code> — both "prolonged release" — outweigh the molecule itself. The
+  shipped demo uses Arctic at full width, which gets this right. bekko is here because it is small
+  enough to run in a browser, and this is the bill for that.</p>
+  <p class="note"><b>This box will not reproduce those percentages exactly, and the gap was measured
+  rather than waved at.</b> The numbers above come from PyTorch; your browser runs bekko's ONNX
+  export, and the two are not bit-identical — a query vector from each agrees at cosine <b>0.961</b>.
+  Over a 120-query sample the top-1 document differs on <b>11%</b> of queries, and accuracy moves from
+  0.800 to <b>0.767</b> top-1 and 0.933 to <b>0.917</b> recall@10 — a gap inside one standard error on
+  that sample, so it is a real numerical difference carrying no accuracy claim. The document side
+  <i>is</i> exact: browser and Python agree to the last bit on retrieval scores, because that part is
+  a dot product over the same file.</p>
+</section>
 
 <section>
   <h2>SHIFT: one subtraction instead of a retrained model</h2>
@@ -93,16 +167,23 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;
   <h2>Matryoshka: a quarter of the bytes, none of the accuracy</h2>
   <p class="lede">Truncating the leading dimensions and renormalising, against a same-size control
   that was never trained for it.</p>
-  <div class="two">
+  <div class="three">
     <div><h3>arctic-embed-l-v2.0 · MRL-trained</h3><table id="mrl"></table></div>
+    <div><h3>bekko-v1-a25m · MRL, 24.9M active</h3><table id="bekko"></table></div>
     <div><h3>multilingual-e5-small · control</h3><table id="e5"></table></div>
   </div>
   <div class="cards" id="mrlcards"></div>
-  <p class="note surprise"><b>This reads like a typo and is not.</b> Arctic's cross-border hits at 256
-  dimensions are <i>higher</i> than at 1024. The tail dimensions carry language-specific detail that
-  SHIFT is trying to remove anyway, so dropping them helps slightly. The control is what makes that
-  claim safe rather than anecdotal: same cut, no MRL objective, and it falls to 86%. Below 256 Arctic
-  degrades too — exactly where Snowflake documented the trained range ending.</p>
+  <p class="note surprise"><b>This reads like a typo and is not.</b> Both MRL models keep <i>more</i>
+  cross-border hits at 256 dimensions than at full width. The control is what makes that claim safe
+  rather than anecdotal: same cut, no MRL objective, and it falls to 86% — then to 20% at 64, where
+  bekko is still climbing. Below 256 Arctic degrades too, exactly where Snowflake documented the
+  trained range ending.</p>
+  <p class="note">The tempting explanation is that truncation strips language-specific detail, doing
+  SHIFT's job for it. That was measured rather than assumed. Re-running bekko at <b>α=0</b>: dropping
+  384→64 dimensions lifts cross-border hits from 0.090 to 0.136 on its own, so the effect is real but
+  small. SHIFT's own contribution is <b>+0.229</b> at 384 and <b>+0.209</b> at 64 — essentially
+  unchanged across a 6× reduction. The two are independent. A 256-byte vector still needs its
+  offset.</p>
 </section>
 
 <section>
@@ -260,12 +341,16 @@ function draw([sweep, mrl, sparse, geo, tree]){
     return { dims, top };
   };
   const a = mrlTable(mrl.arctic_mrl, "#mrl", "v3", true);
+  const b = mrl.bekko_mrl ? mrlTable(mrl.bekko_mrl, "#bekko", "v3", true) : null;
   const e = mrlTable(mrl.e5_control, "#e5", "v2", false);
   const pct = (o, k) => Math.round(o["256"].tgt_hits_per_query / o[k].tgt_hits_per_query * 100);
   $("#mrlcards").innerHTML = `
     <div class="card win"><h4>Arctic at 256 dims</h4>
       <div class="big">${pct(mrl.arctic_mrl, a.dims[0])}%</div>
-      <p>of its cross-border hits, for a quarter of the bytes.</p></div>
+      <p>of its cross-border hits, for a quarter of the bytes.</p></div>` +
+    (b ? `<div class="card win"><h4>bekko at 256 dims</h4>
+      <div class="big">${pct(mrl.bekko_mrl, b.dims[0])}%</div>
+      <p>Same objective, 24.9M active parameters against Arctic's 568M.</p></div>` : "") + `
     <div class="card"><h4>Control at 256 dims</h4>
       <div class="big">${pct(mrl.e5_control, e.dims[0])}%</div>
       <p>Same truncation, model without an MRL objective.</p></div>
@@ -358,4 +443,135 @@ function plot(sel, tree, key, disk){
     g.fillText(`level ${l}`, 23, y);
   }
 }
+</script>
+
+<script type="module">
+// Client-side retrieval. The index is a static file, the query is embedded
+// here, and no request leaves the page once the model is cached.
+//
+// Two settings below are load-bearing and would fail *silently* if wrong:
+//
+//   pooling "mean"   bekko's 1_Pooling/config.json sets mean_tokens, not CLS.
+//                    Arctic is the opposite. Pooling the wrong way still
+//                    returns a 384-vector of plausible numbers that simply
+//                    retrieves badly.
+//   normalize true   bekko's modules.json lists Transformer and Pooling and
+//                    *no* Normalize module, unlike Arctic. Every cosine here
+//                    is a bare dot product, so unit norm has to come from
+//                    somewhere -- and this is the only place left.
+import { pipeline, env } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.5";
+env.allowLocalModels = false;
+
+const MODEL = "hotchpotch/bekko-embedding-v1-a25m";
+const PREFIX = "query: ";
+const $ = s => document.querySelector(s);
+const st = m => { $("#status").innerHTML = m; };
+
+let index = null, extractor = null, busy = false;
+
+// fp16 -> fp32 by hand. Float16Array is too new to depend on, and the decode
+// runs once over 319,488 values.
+function decodeF16(buf) {
+  const u = new Uint16Array(buf), out = new Float32Array(u.length);
+  for (let i = 0; i < u.length; i++) {
+    const h = u[i], s = h >> 15 ? -1 : 1, e = (h >> 10) & 0x1f, f = h & 0x3ff;
+    out[i] = e === 0 ? s * 6.103515625e-5 * (f / 1024)
+           : e === 31 ? (f ? NaN : s * Infinity)
+           : s * Math.pow(2, e - 15) * (1 + f / 1024);
+  }
+  return out;
+}
+
+async function loadIndex() {
+  if (index) return index;
+  const [meta, bin] = await Promise.all([
+    fetch("data/es_index.json").then(r => r.json()),
+    fetch("data/es_vectors_256_fp16.bin").then(r => r.arrayBuffer()),
+  ]);
+  const v = decodeF16(bin);
+  if (v.length !== meta.count * meta.dim)
+    throw new Error(`index is ${v.length} floats, expected ${meta.count * meta.dim}`);
+  index = { ...meta, v };
+  return index;
+}
+
+const norm = a => {
+  let n = 0;
+  for (const x of a) n += x * x;
+  n = Math.sqrt(n) || 1e-12;
+  for (let i = 0; i < a.length; i++) a[i] /= n;
+  return a;
+};
+
+async function embed(text, lang, alpha) {
+  const ix = await loadIndex();
+  if (!extractor) {
+    st("Loading bekko-embedding-v1-a25m …");
+    // WebGPU where it exists, WASM everywhere else. The fallback is not
+    // decorative: Safari and Firefox still land on it.
+    try {
+      extractor = await pipeline("feature-extraction", MODEL,
+        { dtype: "fp32", device: "webgpu" });
+    } catch {
+      extractor = await pipeline("feature-extraction", MODEL, { dtype: "fp32" });
+    }
+  }
+  const out = await extractor(PREFIX + text, { pooling: "mean", normalize: true });
+  // Matryoshka: keep the leading 256 and renormalise. Same two lines as
+  // truncate() in matryoshka.py, which is the point of MRL.
+  const q = norm(Float32Array.from(out.data.slice(0, ix.dim)));
+  // The offset is a displacement, so it is NOT renormalised before use --
+  // doing so would roughly double the correction and wreck retrieval.
+  const off = ix.query_offsets[lang];
+  if (off && alpha) for (let i = 0; i < ix.dim; i++) q[i] -= alpha * off[i];
+  return norm(q);
+}
+
+function search(q, ix, k = 8) {
+  const { v, dim, count, docs } = ix, hits = [];
+  for (let i = 0; i < count; i++) {
+    let s = 0;
+    const o = i * dim;
+    for (let j = 0; j < dim; j++) s += q[j] * v[o + j];
+    hits.push([s, i]);
+  }
+  hits.sort((a, b) => b[0] - a[0]);
+  return hits.slice(0, k).map(([s, i]) => ({ score: s, ...docs[i] }));
+}
+
+async function run(text, lang, alpha) {
+  if (busy || !text.trim()) return;
+  busy = true; $("#go").disabled = true;
+  const t0 = performance.now();
+  try {
+    const ix = await loadIndex();
+    st("Embedding …");
+    const q = await embed(text, lang, alpha);
+    const hits = search(q, ix);
+    const ms = Math.round(performance.now() - t0);
+    // The top ATC is the only thing available to compare against -- the page
+    // has no ground truth for free text, so agreement among the hits is
+    // shown rather than a correctness claim that cannot be made here.
+    const top = hits[0].atc;
+    $("#results").innerHTML = hits.map(h =>
+      `<div class="hit${h.atc === top ? " match" : ""}">
+         <span class="sc">${h.score.toFixed(3)}</span>
+         <span class="nm">${h.brand}${h.otc ? ' <span class="tag es">OTC</span>' : ""}</span>
+         <span class="atc">${h.atc}</span></div>`).join("");
+    st(`${ix.count} Spanish products · ${ix.dim} dims · α=${alpha} · ${ms} ms · `
+     + `<b>${top}</b> leads, matched by ${hits.filter(h => h.atc === top).length} of 8`);
+  } catch (e) {
+    st(`Failed: ${e.message}. The measurements below do not depend on this box.`);
+  } finally { busy = false; $("#go").disabled = false; }
+}
+
+const go = () => run($("#q").value, $("#lang").value, +$("#alpha").value);
+$("#go").onclick = go;
+$("#q").addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+$("#alpha").addEventListener("input", e => { $("#av").textContent = (+e.target.value).toFixed(2); });
+document.querySelectorAll(".chip").forEach(c => c.onclick = () => {
+  $("#q").value = c.dataset.q;
+  $("#lang").value = c.dataset.l;
+  go();
+});
 </script>

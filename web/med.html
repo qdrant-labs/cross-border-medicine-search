@@ -15,19 +15,24 @@ h1{font-size:15px;margin:0;letter-spacing:.2px;font-weight:600}
 
 header{display:flex;align-items:center;gap:18px;padding:12px 18px;
   border-bottom:1px solid var(--line);background:linear-gradient(180deg,#10131c,#0b0d13)}
-header .sub{color:var(--dim);font-size:11.5px}
 .stats{margin-left:auto;display:flex;gap:16px}
 .stat{text-align:right}
 .stat b{display:block;font-size:14px;font-variant-numeric:tabular-nums}
 .stat span{font-size:10px;color:var(--dim2);text-transform:uppercase;letter-spacing:.7px}
 
-main{display:grid;grid-template-columns:300px 1fr 330px;gap:1px;background:var(--line);
+main{display:grid;grid-template-columns:430px 1fr 330px;gap:1px;background:var(--line);
   min-height:calc(100vh - 49px)}
 section{background:var(--bg);padding:14px}
 .t{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--dim2);
   margin:0 0 9px;font-weight:600}
 
-/* camera */
+/* camera.
+   The destination sits beside the viewfinder rather than under it: the demo is
+   two decisions, "which box" and "which country", and when the second one was
+   stacked below the sample thumbnails it fell near the fold and read as a
+   caption on the camera instead of a step of its own. */
+.camrow{display:grid;grid-template-columns:1fr 128px;gap:14px;align-items:start}
+.camrow .dest{position:sticky;top:14px}
 #vidwrap{position:relative;border:1px solid var(--line2);border-radius:7px;
   overflow:hidden;background:#000;aspect-ratio:4/3}
 video,#shot{width:100%;height:100%;object-fit:cover;display:block}
@@ -36,6 +41,10 @@ video,#shot{width:100%;height:100%;object-fit:cover;display:block}
   background:linear-gradient(180deg,transparent,rgba(91,140,255,.22),transparent);
   animation:scan 1s linear infinite}
 @keyframes scan{from{transform:translateY(-100%)}to{transform:translateY(100%)}}
+/* Side by side. .btn is width:100% for the full-width case elsewhere, so the
+   row has to override the margin the stacked version relies on. */
+.btnrow{display:flex;gap:8px;margin-top:8px}
+.btnrow .btn{margin-top:0}
 .btn{display:block;width:100%;margin-top:8px;padding:9px;border-radius:6px;
   border:1px solid var(--line2);background:#141826;color:var(--fg);cursor:pointer;
   font-size:12px;font-weight:500}
@@ -44,25 +53,80 @@ video,#shot{width:100%;height:100%;object-fit:cover;display:block}
 .btn.p:hover{background:#ef2f58}
 .btn:disabled{opacity:.45;cursor:default}
 
-.samples{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:9px}
+/* Four across, not three: the column got wider to seat the destination beside
+   the camera, and at three the cached boxes grew to 130px and pushed the scan
+   memory below the fold. Four keeps them at roughly their original size. */
+.samples{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:9px}
 .samples img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:5px;
   border:1px solid var(--line2);cursor:pointer;background:#fff}
 .samples img:hover{border-color:var(--cool)}
 
+/* brand box drawn over the frozen frame. Two numbers, because they fail
+   independently: how well the characters were read, and how far ahead the
+   leading product is. */
+#bbox{position:absolute;display:none;border:2px solid var(--cool);
+  border-radius:3px;box-shadow:0 0 0 9999px rgba(4,6,12,.5);pointer-events:none}
+#bbox.unsure{border-color:var(--pl);border-style:dashed}
+/* Labels are clamped to the frame width and ellipsised: a registry name runs
+   to 50+ characters and the box it hangs off can sit anywhere in the picture,
+   so without a cap the text escapes the panel entirely. Full string is on the
+   title attribute. */
+#bbox .lab,#bbox .sub{position:absolute;left:-2px;max-width:var(--fw,300px);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-family:ui-monospace,Menlo,monospace;border-radius:3px}
+#bbox .lab{bottom:100%;margin-bottom:3px;font-size:10px;font-weight:600;
+  padding:2px 6px;background:var(--cool);color:#04060c}
+#bbox.unsure .lab{background:var(--pl)}
+#bbox .lab i{font-style:normal;opacity:.75;font-size:9px;margin-left:6px}
+#bbox .sub{top:100%;margin-top:3px;font-size:9px;padding:2px 5px;
+  background:rgba(4,6,12,.86);color:var(--dim);border:1px solid var(--line2)}
+/* Flip the label below the box when the box is near the top of the frame,
+   otherwise it is drawn outside the panel and clipped. */
+#bbox.flip .lab{bottom:auto;top:100%;margin:3px 0 0}
+#bbox.flip .sub{top:auto;bottom:100%;margin:0 0 3px}
+
+/* scan memory: every distinct carton this session, and which registry it
+   came from. Collapses to nothing before the first scan. */
+#mem{margin-top:11px;border:1px solid var(--line);border-radius:7px;
+  background:var(--panel);overflow:hidden}
+#mem[hidden]{display:none}
+#mem .hd{display:flex;align-items:center;gap:8px;padding:7px 10px;
+  border-bottom:1px solid var(--line)}
+#mem .hd .t{margin:0;flex:1}
+#mem .hd b{font-family:ui-monospace,Menlo,monospace;font-size:10px;color:var(--pl)}
+#mem .hd button{border:0;background:none;color:var(--dim2);cursor:pointer;
+  font:inherit;font-size:10px;padding:0 2px}
+#mem .hd button:hover{color:var(--hot)}
+#memchips{display:flex;gap:5px;flex-wrap:wrap;padding:8px 10px 0}
+#memchips span{font-family:ui-monospace,Menlo,monospace;font-size:10px;
+  border:1px solid var(--line2);border-radius:11px;padding:2px 8px;color:var(--dim)}
+#memchips span b{color:var(--pl);font-weight:700}
+#memlist{display:flex;gap:6px;overflow-x:auto;padding:8px 10px 10px;
+  scrollbar-width:thin}
+#memlist .card{flex:none;width:104px;border:1px solid var(--line2);
+  border-radius:5px;overflow:hidden;background:#0b0d14;cursor:pointer}
+#memlist .card:hover{border-color:var(--cool)}
+#memlist .card img{width:100%;height:66px;object-fit:cover;display:block;background:#000}
+#memlist .card .n{font-size:9.5px;line-height:1.25;padding:4px 5px 2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#memlist .card .f{display:flex;gap:4px;align-items:center;padding:0 5px 5px;
+  font-family:ui-monospace,Menlo,monospace;font-size:8.5px;color:var(--dim2)}
+#memlist .card .f .x{margin-left:auto;color:var(--pl)}
+
 #ocr{margin-top:11px;font-size:11px}
-#ocr div{display:flex;gap:7px;padding:2.5px 0;border-bottom:1px solid #14161f}
-#ocr .c{color:var(--dim2);font-variant-numeric:tabular-nums;flex:none;width:30px}
-#q{margin-top:9px;padding:8px;border-radius:5px;background:#101420;
-  border:1px solid var(--line2);font-size:11px;color:var(--cool);word-break:break-word}
 
 /* controls */
 .ctrl{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;
   padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-radius:7px}
 .ctrl label{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--dim2)}
-.chips{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 12px}
-.chips button{border:1px solid var(--line2);background:#11141e;color:var(--dim);
-  border-radius:12px;padding:3px 9px;font:inherit;font-size:10.5px;cursor:pointer}
-.chips button:hover{border-color:var(--cool);color:var(--fg)}
+/* In the input column the field and the language override do not fit on one
+   line, and a half-width input truncates the product names people type. Stack
+   them: full-width field, override under it. */
+.tsearch{flex-direction:column;align-items:stretch;gap:8px}
+.tsearch .seg{align-self:flex-start}
+/* Inside the panel the detector readout is part of the one control, so it
+   loses the outer margin that spaced it as a sibling. */
+.tsearch #det{margin:0}
 #qtext{flex:1;min-width:240px;background:#11141e;border:1px solid var(--line2);
   border-radius:5px;color:var(--fg);padding:7px 10px;font:inherit;font-size:12px}
 #qtext:focus{outline:0;border-color:var(--cool)}
@@ -72,19 +136,152 @@ video,#shot{width:100%;height:100%;object-fit:cover;display:block}
 .seg button+button{border-left:1px solid var(--line2)}
 .seg button.on{background:var(--hot);color:#fff}
 .seg.b button.on{background:var(--cool)}
+/* Stacked variant for the narrow destination column: three country names do
+   not fit side by side at 128px, and full-width rows are a better target for
+   the one control someone else may have to click on stage. */
+.seg.v{flex-direction:column}
+.seg.v button{padding:8px 10px;text-align:left}
+.seg.v button+button{border-left:0;border-top:1px solid var(--line2)}
 
 /* results */
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mdlbox{border:1px solid var(--line);border-radius:7px;background:var(--panel);
+  padding:10px 12px 11px;margin-top:15px}
+/* Chart left, table right. The split keeps the chart near the 306px it was drawn
+   at -- given the full column it scales its 8.5px dot labels up until they
+   collide with the axis -- while giving the table the width its four columns
+   want. align-items:start so the shorter of the two does not stretch. */
+.mdlrow{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.mdlrow .mdlchart,.mdlrow .mdltab{margin-top:0}
+/* The picker IS the chart -- every dot is a model, click one to read its table.
+   A stacked button list fits the rail more comfortably, but it hides the only
+   comparison that decides which encoder ships: what it costs per token against
+   what it scores once SHIFT is applied. Laid out this way the trade-off is a
+   shape rather than something you reconstruct by clicking five tables in turn. */
+.mdlchart{display:block;width:100%;height:auto;margin-top:9px;overflow:visible}
+.mdlchart .grid{stroke:var(--line);stroke-width:1}
+.mdlchart .axt{fill:var(--dim2);font-size:8px;
+  font-family:ui-monospace,Menlo,monospace}
+.mdlchart .axl{fill:var(--dim2);font-size:8.5px}
+/* The dominated region, shaded the way the bekko paper shades it: everything
+   under the staircase is reachable by a model already on screen, so a point
+   sitting inside it is paying parameters for nothing. */
+.mdlchart .front{fill:rgba(61,220,151,.06)}
+.mdlchart .frontline{fill:none;stroke:var(--es);stroke-width:1.2;opacity:.5}
+.mdlchart .pt{cursor:pointer}
+.mdlchart .pt circle.d{fill:var(--bg);stroke:var(--dim2);stroke-width:1.4}
+.mdlchart .pt.pareto circle.d{stroke:var(--es)}
+.mdlchart .pt.on circle.d{fill:var(--es);stroke:var(--es);stroke-width:2}
+/* Halo: the staircase passes horizontally through the y of every frontier point,
+   which is exactly where that point's label sits. Painting the stroke first puts
+   a panel-coloured outline behind the glyphs so the line breaks around the text
+   instead of striking through it, whatever the data does. */
+.mdlchart .pt text{fill:var(--dim2);font-size:8.5px;paint-order:stroke;
+  stroke:var(--panel);stroke-width:3px;stroke-linejoin:round}
+.mdlchart .pt.on text{fill:var(--fg);font-weight:600}
+.mdlchart .pt:hover text{fill:var(--fg)}
+/* Dots are 4px so five of them fit a 330px rail without touching; that is far
+   under a comfortable click target, hence the invisible 10px disc on top. On
+   stage this gets clicked once, by someone who is talking at the time. */
+.mdlchart .hit{fill:transparent}
+/* The SHIFT post's own framing sentence, with its numbers swapped for ours. It
+   is rewritten on every click, so the claim on screen is always about the model
+   whose dot is filled -- a fixed sentence quoting e5-large would go quietly
+   false the moment someone selected a different encoder. */
+/* Below the row now, so the margin moved to the top. */
+.mdlintro{margin:11px 0 0;font-size:10.5px;line-height:1.6;color:var(--dim2)}
+.mdlintro b{color:var(--dim);font-weight:600}
+.mdlintro .big{color:var(--es)}
+.mdltab{width:100%;border-collapse:collapse;margin-top:9px;font-size:10.5px;
+  table-layout:fixed}
+.mdltab td{padding:4px 0;border-top:1px solid var(--line)}
+.mdltab td.n{text-align:right;font-family:ui-monospace,Menlo,monospace;width:52px}
+.mdltab td.lbl{color:var(--dim);overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap}
+.mdltab .hdr td{border-top:0;color:var(--dim2);font-size:9.5px;
+  text-transform:uppercase;letter-spacing:.7px;padding-top:0}
+/* Not uppercased: the transform renders α as Greek capital Alpha, which reads
+   as a different symbol from the one used everywhere else on the page. */
+.mdltab .hdr td.n{text-transform:none;font-size:10px;letter-spacing:0}
+.mdltab .up{color:var(--es)}
+/* Metric captions. Three blocks share one set of columns, so each needs a name
+   to sit under; styled as a caption rather than a second header row so the
+   alpha columns still read as belonging to the header at the top. */
+.mdltab .sec td{color:var(--dim2);font-size:9px;text-transform:uppercase;
+  letter-spacing:.7px;padding:9px 0 2px;border-top:1px solid var(--line2)}
+/* Hover definition for the two metric names. CSS-only rather than reusing #gtip:
+   that one is driven by pointermove over an SVG with no DOM nodes to hang a
+   :hover on, whereas these are ordinary spans in flow. tabindex + :focus-visible
+   so the definition is reachable without a pointer.
+   The bubble un-does the caption's own uppercase/letter-spacing/9px: it is a
+   sentence, and the row above it is a label. */
+.mtip{position:relative;cursor:help;border-bottom:1px dotted var(--line2)}
+.mtip::after{content:attr(data-tip);position:absolute;z-index:70;
+  left:0;top:calc(100% + 6px);width:250px;
+  background:#0d1018;border:1px solid var(--line2);border-radius:5px;padding:7px 9px;
+  box-shadow:0 6px 22px rgba(0,0,0,.6);
+  font-size:10.5px;line-height:1.55;letter-spacing:0;text-transform:none;
+  color:var(--dim);white-space:normal;
+  opacity:0;visibility:hidden;transition:opacity .12s .25s,visibility 0s .25s}
+.mtip:hover::after,.mtip:focus-visible::after{opacity:1;visibility:visible}
+/* The last block's bubble would hang off the bottom of the rail, so it opens
+   upward instead. Keyed off a class rather than :last-child -- the block order
+   is set in showModel() and this should follow the metric, not the position. */
+.mtip.up::after{top:auto;bottom:calc(100% + 6px)}
+/* Intro for section 5, deliberately quiet: it heads a rail of knobs, not the
+   argument of the talk, and carries no border of its own so the two bordered
+   .subsec boxes below it are what the eye lands on. */
+.ctrlex{margin:5px 0 0;font-size:10.5px;line-height:1.65;color:var(--dim2)}
+.ctrlex b{color:var(--dim);font-weight:600}
+.ctrlex code{font-family:ui-monospace,Menlo,monospace;font-size:10px;color:var(--dim)}
+/* One box per retrieval pass. Bordered rather than merely spaced, because the
+   point of the split is that a knob belongs to one pass and not the other, and
+   whitespace alone did not carry that when the two rows sat under one heading. */
+.subsec{border:1px solid var(--line);border-radius:7px;background:var(--panel);
+  padding:9px 11px 10px;margin-top:9px}
+.subt{margin:0 0 7px;font-size:10px;font-weight:600;color:var(--dim);
+  text-transform:uppercase;letter-spacing:.7px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
 .col{border:1px solid var(--line);border-radius:7px;background:var(--panel);overflow:hidden}
 .col h3{margin:0;padding:9px 11px;font-size:11px;font-weight:600;
   border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+/* The name and the alpha were one run of text separated by a middot, which made
+   the setting look like part of the label. Split them: the name says which side
+   you are looking at, the chip says what was done to it. */
+/* nowrap on both: at column width the three items together overflow and the
+   name was the one that broke, stacking "SHIFT" over "off". The pill is the
+   expendable one, so it is the only item allowed to shrink. */
+.col h3 .nm{letter-spacing:.3px;white-space:nowrap}
+.col h3 .al{font-family:ui-monospace,Menlo,monospace;font-size:10px;font-weight:400;
+  padding:1px 6px;border-radius:20px;background:#11141e;border:1px solid var(--line2);
+  white-space:nowrap;flex:none}
+.col h3 .pill{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .col.off h3{background:rgba(220,36,76,.09)}
 .col.on h3{background:rgba(61,220,151,.09)}
+.col.off h3 .nm{color:var(--hot)}
+.col.on h3 .nm{color:var(--es)}
+.col .cap{margin:0;padding:7px 11px;font-size:10px;line-height:1.45;color:var(--dim2);
+  border-bottom:1px solid var(--line)}
+/* Two hits visible, the other eight behind a scroll. Ten rows pushed the two
+   lists past a projected screen and the comparison is decided in the top few
+   anyway; max-height is set from the measured height of VISIBLE_HITS rows in
+   capHits(), because a row is one or two lines depending on the brand. */
+.col .hits{overflow-y:auto;overscroll-behavior:contain}
+.col .hits::-webkit-scrollbar{width:7px}
+.col .hits::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
+.col .more{padding:5px 11px;font-size:9.5px;color:var(--dim2);
+  font-family:ui-monospace,Menlo,monospace;border-top:1px solid var(--line)}
+.col .more:empty{display:none}
 .pill{margin-left:auto;font-size:10px;padding:2px 7px;border-radius:20px;
   background:#1b2030;color:var(--dim);font-family:ui-monospace,Menlo,monospace}
 .hit{display:flex;gap:9px;padding:8px 11px;border-bottom:1px solid #13151e;align-items:flex-start}
 .hit img{width:46px;height:46px;object-fit:cover;border-radius:4px;background:#fff;flex:none}
-.hit .ph{width:46px;height:46px;border-radius:4px;background:#12151f;flex:none}
+/* No photo is not a rendering gap, it is a fact about the registry: only CIMA
+   publishes packaging shots, so a Polish or Dutch row has none and says so
+   rather than borrowing a Spanish carton. */
+.hit .ph{width:46px;height:46px;border-radius:4px;background:#12151f;flex:none;
+  border:1px dashed var(--line2);display:flex;align-items:center;
+  justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:8px;
+  color:var(--dim2);text-align:center;line-height:1.1;padding:2px}
 .hit .b{font-size:12px;font-weight:500;line-height:1.3}
 .hit .m{font-size:10px;color:var(--dim);margin-top:2px}
 .flag{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:700;letter-spacing:.5px}
@@ -97,8 +294,15 @@ video,#shot{width:100%;height:100%;object-fit:cover;display:block}
   margin:-6px 0 11px;color:var(--dim);min-height:17px}
 #det .big{font-size:11px;font-weight:700;letter-spacing:.6px;padding:2px 7px;
   border-radius:4px}
-#det .ev{font-family:ui-monospace,Menlo,monospace;font-size:9.5px;color:var(--dim2);
-  border:1px solid var(--line);border-radius:3px;padding:1px 5px}
+/* The token votes break to their own line: the verdict ("POLISH · origin read
+   off the box") is the claim and the tokens are the evidence for it, and when
+   they wrapped mid-row the split landed at whatever width the column happened
+   to be, so the two read as one run-on strip. */
+#det .evrow{flex-basis:100%;display:flex;gap:4px;flex-wrap:wrap}
+/* 9px, not 9.5: inside the panel the usable width is 376px and three votes at
+   the larger size measure 390, so the third wrapped to a line of its own. */
+#det .ev{font-family:ui-monospace,Menlo,monospace;font-size:9px;color:var(--dim2);
+  border:1px solid var(--line);border-radius:3px;padding:1px 4px}
 #det .warn{color:var(--pl)}
 .hd{font-size:9px;color:var(--cool)}
 .atc{font-family:ui-monospace,Menlo,monospace;font-size:9.5px;color:var(--dim2)}
@@ -107,21 +311,91 @@ video,#shot{width:100%;height:100%;object-fit:cover;display:block}
 canvas{width:100%;border:1px solid var(--line);border-radius:7px;background:#0b0d14;
   display:block;margin-bottom:5px}
 .cap{font-size:10px;color:var(--dim2);margin:0 0 13px;line-height:1.4}
-.bar{display:flex;align-items:center;gap:7px;margin:4px 0;font-size:10.5px}
-.bar .k{width:42px;color:var(--dim);font-family:ui-monospace,Menlo,monospace;flex:none}
-.bar .track{flex:1;height:13px;background:#12151f;border-radius:3px;overflow:hidden}
-.bar .fill{height:100%;background:linear-gradient(90deg,#3ddc97,#2a9d6d)}
-.bar .fill.warn{background:linear-gradient(90deg,#ff9f45,#c2701f)}
-.bar .v{width:40px;text-align:right;color:var(--dim);font-variant-numeric:tabular-nums;flex:none}
+
+/* interactive geometry viewer */
+.gwrap{position:relative;margin-bottom:5px}
+.gwrap canvas{margin:0;cursor:grab;touch-action:none}
+.gwrap canvas.drag{cursor:grabbing}
+.gwrap .tag{position:absolute;top:7px;left:8px;font-family:ui-monospace,Menlo,monospace;
+  font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim2);
+  pointer-events:none}
+.gwrap .tag b{color:var(--cool);font-weight:600}
+.gwrap .zoom{position:absolute;top:6px;right:7px;display:flex;gap:3px}
+.gwrap .zoom button{width:19px;height:19px;padding:0;line-height:1;border-radius:4px;
+  border:1px solid var(--line2);background:rgba(11,13,20,.84);color:var(--dim);
+  cursor:pointer;font-size:11px;font-family:ui-monospace,Menlo,monospace}
+.gwrap .zoom button:hover{color:var(--fg);border-color:var(--cool)}
+
+/* Expanded view. 534 nodes in a 300px sidebar is a thumbnail, not something
+   you can explore -- at that size adjacent level-5 codes are a pixel apart and
+   the hit test is a coin toss. Full screen is where the panning and the
+   geodesics actually read. */
+.gwrap.full{position:fixed;inset:0;z-index:50;margin:0;background:rgba(5,6,10,.93);
+  display:flex;align-items:center;justify-content:center}
+.gwrap.full canvas{width:auto;height:auto;border-radius:10px}
+.gwrap.full .tag{top:18px;left:22px;font-size:11px}
+.gwrap.full .zoom{top:16px;right:20px}
+.gwrap.full .zoom button{width:26px;height:26px;font-size:13px}
+/* Above .gwrap.full (50), or the readout disappears behind the very panel it
+   is describing in the one mode where there is room to read it. */
+#gtip{position:fixed;z-index:60;display:none;pointer-events:none;max-width:250px;
+  background:#0d1018;border:1px solid var(--line2);border-radius:5px;padding:6px 8px;
+  box-shadow:0 6px 22px rgba(0,0,0,.6)}
+#gtip .c{font-family:ui-monospace,Menlo,monospace;font-size:10px;color:var(--cool)}
+#gtip .n{font-size:11px;margin:2px 0 3px;line-height:1.3}
+#gtip .r{font-family:ui-monospace,Menlo,monospace;font-size:9px;color:var(--dim2)}
+
+#gsearch{width:100%;background:#11141e;border:1px solid var(--line2);border-radius:5px;
+  color:var(--fg);padding:6px 9px;font:inherit;font-size:11px;margin-bottom:7px}
+#gsearch:focus{outline:0;border-color:var(--cool)}
+#ghits{position:relative;margin:-7px 0 7px}
+#ghits div{padding:4px 8px;font-size:11px;cursor:pointer;border:1px solid var(--line2);
+  border-top:0;background:#0d1018}
+#ghits div:first-child{border-top:1px solid var(--line2);border-radius:5px 5px 0 0}
+#ghits div:last-child{border-radius:0 0 5px 5px}
+#ghits div:hover,#ghits div.sel{background:#161b29;color:var(--cool)}
+#ghits .c{font-family:ui-monospace,Menlo,monospace;font-size:9px;color:var(--dim2);
+  margin-right:6px}
+#gsel{font-size:10.5px;color:var(--dim);margin:0 0 9px;line-height:1.5;min-height:15px}
+#gsel b{color:var(--fg)}
+#gsel .hop{font-family:ui-monospace,Menlo,monospace;color:var(--es)}
+.sub2{font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--dim2);
+  margin:10px 0 3px;font-weight:600}
+.sub2:first-child{margin-top:0}
 .note{font-size:10px;color:var(--dim2);border-left:2px solid var(--line2);
   padding-left:8px;margin-top:10px;line-height:1.5}
-#path{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
-#path span{font-family:ui-monospace,Menlo,monospace;font-size:10px;padding:2px 6px;
-  border-radius:3px;background:#141824;border:1px solid var(--line2);color:var(--dim)}
-#path span:last-child{background:rgba(91,140,255,.16);color:var(--cool);border-color:#2f4272}
-
 /* retrieval-method comparison: full-width band under the three columns */
-#sparsewrap{grid-column:1/-1;border-top:1px solid var(--line)}
+#sparsewrap,#geowrap{grid-column:1/-1;border-top:1px solid var(--line)}
+
+/* geometry band: search + chips on one line, then two canvases side by side */
+.gctrl{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.gctrl #gsearch{width:320px;flex:none;margin-bottom:0}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+.chips button{background:#141824;border:1px solid var(--line2);border-radius:11px;
+  color:var(--dim);padding:3px 10px;font:inherit;font-size:10px;cursor:pointer}
+.chips button:hover{border-color:var(--cool);color:var(--cool)}
+.chips button.on{background:rgba(91,140,255,.16);color:var(--cool);border-color:#2f4272}
+#geowrap .gctrl{margin-bottom:9px}
+#geowrap #ghits{margin:0 0 7px;max-width:320px}
+/* The canvas is square and the band is wide, so cap it or one disk eats the
+   fold and the side-by-side comparison stops being side by side. */
+#geowrap .gwrap canvas{max-width:430px;margin:0 auto;display:block}
+.zoom .zl{font-family:ui-monospace,Menlo,monospace;font-size:9px;color:var(--dim2);
+  margin-right:6px;vertical-align:middle;font-variant-numeric:tabular-nums}
+.nb{display:flex;flex-direction:column;gap:2px;min-height:96px}
+.nb .r{display:flex;align-items:baseline;gap:7px;font-size:10.5px;padding:2px 6px;
+  border-radius:3px;cursor:pointer}
+.nb .r:hover{background:#141824}
+.nb .c{font-family:ui-monospace,Menlo,monospace;font-size:9.5px;color:var(--dim2);
+  width:58px;flex:none}
+.nb .r.kin .c{color:var(--es)}
+.nb .n{flex:1;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nb .d{font-family:ui-monospace,Menlo,monospace;font-size:9.5px;flex:none;
+  padding:1px 5px;border-radius:3px;font-variant-numeric:tabular-nums}
+.nb .d.near{background:rgba(61,220,151,.14);color:var(--es)}
+.nb .d.mid{background:rgba(255,159,69,.14);color:var(--pl)}
+.nb .d.far{background:rgba(220,36,76,.14);color:var(--hot)}
+.nb .empty{font-size:10px;color:var(--dim2);padding:2px 6px}
 .methods{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:11px}
 .methods .m4{border:1px solid var(--line2);border-radius:7px;padding:10px;min-width:0}
 .methods .m4 h4{margin:0 0 8px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
@@ -140,73 +414,150 @@ canvas{width:100%;border:1px solid var(--line);border-radius:7px;background:#0b0
 
 <header>
   <h1>Cross-border medicine lookup</h1>
-  <span class="sub">Polish or Dutch box &rarr; Spanish shelf &middot; joined on ATC, never on brand</span>
   <div class="stats" id="stats"></div>
 </header>
 
 <main>
 <!-- ---------------- camera ---------------- -->
 <section>
-  <p class="t">1 &middot; Camera</p>
-  <div id="vidwrap"><video id="vid" playsinline muted></video><img id="shot"></div>
-  <button class="btn p" id="scan">Scan box</button>
-  <button class="btn" id="cam">Enable camera</button>
+  <div class="camrow">
+    <div>
+      <p class="t">1 &middot; Camera</p>
+      <div id="vidwrap"><video id="vid" playsinline muted></video><img id="shot" crossorigin="anonymous">
+        <div id="bbox"><span class="lab"></span><span class="sub"></span></div>
+      </div>
+      <div class="btnrow">
+        <button class="btn p" id="scan">Scan box</button>
+        <button class="btn" id="cam">Enable camera</button>
+      </div>
+    </div>
+
+    <!-- The country is the one thing the software cannot read off the carton.
+         Language is detected; destination is a decision, so it is asked for
+         rather than guessed, and it sits beside the viewfinder because it is
+         the second half of the same question the camera is asking. -->
+    <div class="dest">
+      <p class="t">2 &middot; Find it in</p>
+      <div class="seg v" id="tgt"></div>
+      <p class="note" id="tgtnote"></p>
+    </div>
+  </div>
+
+  <!-- The typed query sits in the input column, not over the results. It is
+       the same query path as the camera -- a string of carton text going into
+       one embedding model -- so it belongs beside the thing it substitutes
+       for, and the results column is left to show only results. -->
+  <p class="t" style="margin-top:15px">3 &middot; Text search engine</p>
+  <div class="ctrl tsearch">
+    <input id="qtext" placeholder="Type the product name or ingredients&hellip;" autocomplete="off">
+    <div class="seg" id="qlang"></div>
+    <div id="det"></div>
+  </div>
+
+  <div id="mem" hidden>
+    <div class="hd">
+      <p class="t">Scan memory</p>
+      <b id="memn"></b>
+      <button id="memclr" title="forget every scan">clear</button>
+    </div>
+    <div id="memchips"></div>
+    <div id="memlist"></div>
+  </div>
+
   <p class="t" style="margin-top:15px">Or use a cached box</p>
   <div class="samples" id="samples"></div>
   <div id="ocr"></div>
-  <div id="q" style="display:none"></div>
 </section>
 
-<!-- ---------------- results ---------------- -->
+<!-- ---------------- results ----------------
+     Nothing above the two panels any more: no latency pill, no SHIFT explainer.
+     What SHIFT is, and that Spanish as the query language makes both panels
+     identical by construction rather than by fault, are both spoken. The
+     identical-panels case is the one to watch for live -- with the note gone it
+     reads as a broken slider. -->
 <section>
-  <div class="ctrl">
-    <input id="qtext" placeholder="or type a product: Apap, Paracetamolum&hellip;" autocomplete="off">
-    <div class="seg" id="qlang"></div>
-  </div>
-  <div id="det"></div>
-  <div class="chips" id="sugg"></div>
-  <div class="ctrl">
-    <label>Matryoshka dim</label>
-    <div class="seg b" id="dims"></div>
-    <label style="margin-left:6px">Show</label>
-    <div class="seg" id="tgt"></div>
-    <label style="margin-left:6px">ATC rerank</label>
-    <div class="seg" id="rrk">
-      <button data-v="" class="on">off</button>
-      <button data-v="1">hyperbolic</button>
-    </div>
-    <label style="margin-left:6px" id="pflabel">Query plan</label>
-    <div class="seg" id="pf">
-      <button data-v="" class="on">single stage</button>
-      <button data-v="1">64d prefetch</button>
-    </div>
-    <span class="pill mono" id="lat"></span>
-    <span class="note" id="qnote"></span>
-  </div>
+  <!-- Unnumbered on purpose: 1-3 are what you do and 4-5 are what you tune, and
+       this is neither -- it is the answer they produce. Numbering it would put a
+       step between "type a query" and "pick a model" that nobody performs. -->
+  <p class="t" style="margin:0 0 7px">Search results</p>
   <div class="cols">
-    <div class="col off"><h3>SHIFT off &middot; &alpha;=0 <span class="pill" id="p0"></span></h3><div id="r0"></div></div>
-    <div class="col on"><h3>SHIFT on &middot; &alpha;=1 <span class="pill" id="p1"></span></h3><div id="r1"></div></div>
+    <div class="col off">
+      <h3><span class="nm">SHIFT off</span><span class="al" id="a0">&alpha; = 0</span>
+        <span class="pill" id="p0"></span></h3>
+      <p class="cap">query left as it is &mdash; the model's own language bias picks the list</p>
+      <div class="hits" id="r0"></div>
+      <div class="more" id="m0"></div>
+    </div>
+    <div class="col on">
+      <h3><span class="nm">SHIFT on</span><span class="al" id="a1">&alpha; = 0.75</span>
+        <span class="pill" id="p1"></span></h3>
+      <p class="cap">language offset subtracted from the query first</p>
+      <div class="hits" id="r1"></div>
+      <div class="more" id="m1"></div>
+    </div>
   </div>
-  <p class="note">Same query, same index, same model. The only difference is whether one
-  language-offset vector was subtracted first. Nothing was retrained.</p>
+
+  <!-- ------------- encoders, under the results -------------
+       Measured, not live. The served index is arctic and only arctic; this is the
+       same alpha sweep re-run offline on each encoder. The on-screen caption
+       saying so was cut deliberately, so nothing here now distinguishes picking a
+       dot from re-running the search -- that distinction is carried out loud by
+       the speaker. Do not add a control that appears to change the served model.
+
+       Sits in the middle column so it reads 4 then 5 left to right; the chart was
+       drawn for a 330px rail, so .mdlbox is width-capped rather than allowed to
+       stretch to the full column. -->
+  <div class="mdlbox" id="mdlbox" hidden>
+    <p class="t" style="margin:0 0 7px">4 &middot; Select your multilingual embedding model</p>
+    <!-- Chart and table side by side: they are two views of the same click, so
+         reading one should not mean scrolling past the other. The sentence sits
+         under both because it is about whichever dot is currently filled, and
+         above either one it would read as a caption on just that one. -->
+    <div class="mdlrow">
+      <svg class="mdlchart" id="mdl" viewBox="0 0 306 196"
+           role="group" aria-label="encoder picker"></svg>
+      <table class="mdltab"><tbody id="mdltab"></tbody></table>
+    </div>
+    <p class="mdlintro" id="mdlintro"></p>
+  </div>
 </section>
 
-<!-- ---------------- geometry ---------------- -->
+<!-- ------------- right rail: coarse-to-fine -------------
+     What the "Matryoshka dim" and "Query plan" knobs do. The knobs still drive
+     the two panels in the middle column, so this is the one section on the page
+     whose controls act on something that is not next to them -- turn a knob and
+     watch whether the answer moves. Written at boot from META so the widths and
+     the overfetch factor cannot drift away from what the server is really doing. -->
 <section>
-  <p class="t">ATC path</p>
-  <div id="path"></div>
+  <p class="t" style="margin:0 0 7px">5 &middot; Coarse-to-fine retrieval with Matryoshka</p>
+  <p class="ctrlex" id="ctrlex"></p>
 
-  <p class="t">Hyperbolic vs Euclidean</p>
-  <canvas id="cp" width="600" height="600"></canvas>
-  <p class="cap"><b style="color:var(--fg)">Poincar&eacute; disk.</b> Radius = how specific
-  the code is. Level 1 sits near the centre, individual substances at the rim.</p>
-  <canvas id="ce" width="600" height="600"></canvas>
-  <p class="cap"><b style="color:var(--fg)">Euclidean.</b> Same tree, same training budget.
-  The levels collapse into each other.</p>
+  <!-- Split by pass, because the two passes answer different questions and the
+       controls were previously in one undifferentiated row where "64d" appeared
+       twice meaning two different things. -->
+  <div class="subsec">
+    <p class="subt">5a &middot; Coarse pass &mdash; Matryoshka prefetch</p>
+    <div class="ctrl" style="margin:0">
+      <label id="pflabel">Query plan</label>
+      <div class="seg" id="pf">
+        <button data-v="" class="on">single stage</button>
+        <button data-v="1">64d prefetch</button>
+      </div>
+    </div>
+  </div>
 
-  <p class="t">Matryoshka: bytes vs cross-border hits</p>
-  <div id="mrl"></div>
-  <p class="note" id="mrlnote"></p>
+  <div class="subsec">
+    <p class="subt">5b &middot; Fine pass &mdash; rescore the shortlist</p>
+    <div class="ctrl" style="margin:0">
+      <label>Matryoshka dim</label>
+      <div class="seg b" id="dims"></div>
+      <label style="margin-left:6px">ATC rerank</label>
+      <div class="seg" id="rrk">
+        <button data-v="" class="on">off</button>
+        <button data-v="1">hyperbolic</button>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- ------------- retrieval methods -------------
@@ -231,7 +582,62 @@ canvas{width:100%;border:1px solid var(--line);border-radius:7px;background:#0b0
   Green marks agreement with the dense top hit — the shipped answer, not an annotated
   ground truth.</p>
 </section>
+
+<!-- ------------- geometry, full width -------------
+     Two 10-dimensional embeddings of the same 534-node ATC tree, drawn as 2D
+     projections. Full width rather than in the rail because the comparison is
+     the point and two 330px squares do not make a comparison. -->
+<section id="geowrap">
+  <p class="t">Hyperbolic vs Euclidean</p>
+  <div class="gctrl">
+    <input id="gsearch" placeholder="search the ATC tree: ibuprofen, N02B&hellip;" autocomplete="off">
+    <span id="gchips" class="chips"></span>
+  </div>
+  <div id="ghits"></div>
+  <p id="gsel"></p>
+
+  <div class="cols">
+    <div>
+      <div class="gwrap">
+        <canvas id="cp" width="600" height="600"></canvas>
+        <span class="tag">poincar&eacute; &middot; MAP <b id="mapp">&mdash;</b></span>
+        <span class="zoom"><b class="zl" id="zlcp">1.0&times;</b
+          ><button data-c="cp" data-z="1.4">+</button
+          ><button data-c="cp" data-z="0.714">&minus;</button
+          ><button data-c="cp" data-z="0">&#8634;</button
+          ><button data-c="cp" data-full="1" title="expand (esc to close)">&#10530;</button></span>
+      </div>
+      <p class="sub2">nearest in 10d hyperbolic</p>
+      <div class="nb" id="nbp"></div>
+      <p class="cap"><b style="color:var(--fg)">Poincar&eacute; disk.</b> Radius = how specific
+      the code is. Level 1 sits near the centre, individual substances at the rim.
+      Click a node to trace its ancestor chain along true geodesics &mdash; circular arcs
+      meeting the boundary at right angles, not straight lines.</p>
+    </div>
+    <div>
+      <div class="gwrap">
+        <canvas id="ce" width="600" height="600"></canvas>
+        <span class="tag">euclidean &middot; MAP <b id="mape">&mdash;</b></span>
+        <span class="zoom"><b class="zl" id="zlce">1.0&times;</b
+          ><button data-c="ce" data-z="1.4">+</button
+          ><button data-c="ce" data-z="0.714">&minus;</button
+          ><button data-c="ce" data-z="0">&#8634;</button
+          ><button data-c="ce" data-full="1" title="expand (esc to close)">&#10530;</button></span>
+      </div>
+      <p class="sub2">nearest in 10d euclidean</p>
+      <div class="nb" id="nbe"></div>
+      <p class="cap"><b style="color:var(--fg)">Euclidean.</b> Same tree, same training budget.
+      The levels collapse into each other. Scroll to zoom, drag to pan, double-click to reset;
+      the two panels select together.</p>
+    </div>
+  </div>
+</section>
+
 </main>
+
+<!-- Hover readout for both disks. Lives outside the panels and is position:fixed
+     so it can spill past the sidebar instead of being clipped by it. -->
+<div id="gtip"></div>
 
 <script>
 const $ = s => document.querySelector(s);
@@ -246,6 +652,11 @@ let META = null, DIM = 1024, TARGET = "", RERANK = "", PREFETCH = "",
 
 const fmt = n => n.toLocaleString("en-US");
 const LANGNAME = { pl:"polish", es:"spanish", nl:"dutch" };
+// The destination is a country, not a language: you stand in a pharmacy in
+// Spain, not in "spanish". Photos come from the national registry, and only
+// Spain's publishes them, so the picker has to say which choices lose them.
+const COUNTRY = { pl:"Poland", es:"Spain", nl:"Netherlands" };
+const REGISTRY = { pl:"Rejestr Produktów Leczniczych", es:"CIMA", nl:"CBG-MEB" };
 
 // ---------------------------------------------------------------- bootstrap
 async function boot(){
@@ -260,13 +671,21 @@ async function boot(){
   // adding a registry to the corpus adds a button without touching the UI.
   $("#qlang").innerHTML = `<button data-v="" class="on">auto</button>` +
     META.langs.map(l => `<button data-v="${l}">${LANGNAME[l]||l}</button>`).join("");
-  $("#tgt").innerHTML = `<button data-v="" class="on">all</button>` + META.langs.map(l =>
-    `<button data-v="${l}">${LANGNAME[l]||l} only</button>`).join("");
+  // Defaults to the pivot. "All" is gone: mixing three shelves into one list is
+  // a retrieval debugging view, not the question a person holding a box has,
+  // and it was what made the results read as a jumble of languages on stage.
+  TARGET = META.pivot;
+  $("#tgt").innerHTML = META.langs.map(l =>
+    `<button data-v="${l}" class="${l === TARGET ? "on" : ""}">${COUNTRY[l]||l}</button>`
+  ).join("");
+
+  drawModels();
 
   $("#dims").innerHTML = META.dims.map(d =>
     `<button data-v="${d}" class="${d===DIM?"on":""}">${d}</button>`).join("");
-  wireSeg("#dims", v => { DIM = +v; if (LAST) run(LAST); drawMRL(); });
-  wireSeg("#tgt", v => { TARGET = v; if (LAST) run(LAST); });
+  wireSeg("#dims", v => { DIM = +v; if (LAST) run(LAST); });
+  wireSeg("#tgt", v => { TARGET = v; drawTargetNote(); if (LAST) run(LAST); });
+  drawTargetNote();
   wireSeg("#rrk", v => { RERANK = v; if (LAST) run(LAST); });
   // Two-stage retrieval, both stages server-side: the first 64 coordinates of
   // the same vector pick a wide shortlist, full width reorders it. The results
@@ -274,13 +693,40 @@ async function boot(){
   wireSeg("#pf", v => { PREFETCH = v; if (LAST) run(LAST); });
   $("#pflabel").title = $("#pf").title =
     `${META.prefetch.dim}d prefetch, ${META.prefetch.factor}× overfetch`;
+  // Coarse-to-fine, stated in the widths this server actually uses. Hers was
+  // written with 1,536 dims over millions of documents; those are the right
+  // orders of magnitude for the pattern and the wrong ones for this index, and
+  // a number on screen during a talk gets read as a measurement of what is on
+  // screen. The pattern is the point and it survives the smaller numbers.
+  const FULL = Math.max(...META.dims), PD = META.prefetch.dim;
+  // No "Coarse-to-fine retrieval." lead-in any more -- it has a heading now, and
+  // repeating it as the first bold words reads as a stutter.
+  $("#ctrlex").innerHTML =
+    `Comparing multilingual vectors is the `
+    + `expensive half of this search, and the cost scales with how wide the `
+    + `vector is. Matryoshka embeddings are trained so a <i>prefix</i> is still a `
+    + `usable vector: the first <b>${PD}</b> of <b>${FULL}</b> coordinates rank `
+    + `well enough to shortlist. So <b>${PD}d prefetch</b> runs a cheap first `
+    + `pass, overfetching <b>${META.prefetch.factor}&times;</b> the results it `
+    + `needs, and the full ${FULL}d vector only has to reorder that shortlist `
+    + `instead of scoring the whole index. The two plans should return the same `
+    + `list &mdash; if it moves, the prefix was cut too short.`;
+
+  // The per-subsection captions are gone; #ctrlex above is the only prose in
+  // section 5. Two things they carried are now spoken: that the prefetch width is
+  // fixed server-side (so 5a is a yes/no, not a width), and that ATC rerank uses
+  // no text vector at all -- it ranks by hyperbolic distance in the widest
+  // Poincare ATC-tree embedding the server loaded, 10 today. That second one is
+  // the easiest thing on this page to state wrongly; 5b's heading says "rescore
+  // the shortlist" rather than naming a vector width for exactly that reason.
+
   // Which language the query is written in. It picks the SHIFT offset and the
   // registry the rerank anchor is resolved against -- a Spanish query must not
   // be corrected with the Polish offset, because Spanish is the pivot, and a
   // Dutch query must get the Dutch offset and not the Polish one. On "auto"
   // this is read off the text itself and these buttons only serve to contradict
   // the detector, which is worth being able to do live.
-  wireSeg("#qlang", v => { QLANG = v; loadSuggestions(); if (LAST) run(LAST); });
+  wireSeg("#qlang", v => { QLANG = v; if (LAST) run(LAST); });
 
   $("#qtext").onkeydown = e => {
     if (e.key !== "Enter") return;
@@ -301,9 +747,11 @@ async function boot(){
 
   $("#sparsewrap").style.display = META.sparse ? "" : "none";
 
-  drawMRL();
+  memLoad(); memRender();
   loadSamples();
-  loadSuggestions();
+  wireCanvas("cp", "poincare");
+  wireCanvas("ce", "euclidean");
+  wireGeoSearch();
   drawGeometry("");
 }
 
@@ -315,48 +763,59 @@ function wireSeg(sel, cb){
   };
 }
 
-// Pre-ranked queries that show the off/on contrast clearly, in whichever
-// language is currently selected. They are re-fetched when the language
-// changes because the ranking is per language: a Dutch query that works
-// without any correction would show two identical panels, and those are
-// exactly the ones the picker filters out.
-// On "auto" there is no selected language to draw suggestions for, so fall back
-// to the first non-pivot registry -- the pivot has no offset and would offer an
-// empty list by construction.
-const suggLang = () => QLANG || META.langs.find(l => l !== META.pivot) || META.pivot;
-
-let SUGG = [];
-async function loadSuggestions(){
-  const d = await (await fetch(`${API}/api/med/suggestions?n=8&qlang=${suggLang()}`)).json();
-  SUGG = d.queries;
-  // Index into SUGG rather than the text itself: product names contain quotes
-  // and esc() only handles & < >, so embedding them would break the attribute.
-  $("#sugg").innerHTML = SUGG.map((q, i) =>
-    `<button data-i="${i}" title="${esc(q.atc)} · +${q.gain} spanish in top 10">${esc(q.text.split(",")[0])}</button>`
-  ).join("") || `<div class="note">no pre-ranked queries for ${LANGNAME[suggLang()]||suggLang()} — ${
-    suggLang() === META.pivot ? "it is the pivot, so there is no offset to demonstrate" : "run pick_demo_queries.py"}</div>`;
-  $("#sugg").onclick = e => {
-    const b = e.target.closest("button"); if (!b) return;
-    const t = SUGG[+b.dataset.i].text;
-    $("#qtext").value = t;
-    run(t);
-  };
+// ---------------------------------------------------------------- samples
+// What the chosen destination costs. Photos are not a UI feature, they are a
+// property of the registry: CIMA publishes packaging shots and the Polish and
+// Dutch registers do not, so picking those countries returns correct matches
+// with empty photo slots. Saying so here beats letting it look like a bug.
+function drawTargetNote(){
+  if (!META) return;
+  const n = (META.n_by_lang || {})[TARGET] || 0;
+  // Products with a photo, not photos: 1,898 files cover 956 Spanish products,
+  // so "with packaging photos" promised a picture on every row and then showed
+  // "no photo" on about one in four of them. State the coverage instead.
+  const np = (META.n_photo_products || {})[TARGET] || 0;
+  // Only after something has actually been searched. USED initialises to the
+  // pivot, so an unguarded check announces a same-country lookup on a page
+  // where nothing has been scanned yet.
+  const same = LAST && USED === TARGET;
+  $("#tgtnote").innerHTML =
+    `${REGISTRY[TARGET]||"registry"} &middot; <b style="color:var(--fg)">${fmt(n)}</b> products`
+    + (np ? ` &middot; <b style="color:var(--fg)">${fmt(np)}</b> with packaging photos `
+            + `(${Math.round(100*np/Math.max(n,1))}%)`
+          : ` &middot; <span style="color:var(--pl)">no packaging photos</span> — only `
+            + `Spain's registry publishes them`)
+    + (same ? ` &middot; <span style="color:var(--pl)">the box you scanned is already from `
+              + `${COUNTRY[TARGET]}</span>, so this is a same-country lookup` : "");
 }
 
-// ---------------------------------------------------------------- samples
 async function loadSamples(){
   const man = await (await fetch(API+"/med_img/manifest.json")).json();
-  const keys = Object.keys(man).filter(k => man[k].kind === "materialas").slice(0, 9);
+  // One box per ATC level-1 group, in manifest order, before taking seconds.
+  //
+  // Taking the first nine outright gave nine painkillers -- ANTIDOL, DIFENADOL,
+  // DOCTRIL -- because that is how the manifest happens to be ordered. The
+  // images were never wrong (every card's photo is keyed to its own nreg), but
+  // a paracetamol query then returned those same boxes, correctly, and on a
+  // screen that reads as the results recycling the props.
+  const all = Object.keys(man).filter(k => man[k].kind === "materialas");
+  const seen = new Set(), first = [], rest = [];
+  for (const k of all){
+    const g = (man[k].atc || "?")[0];
+    (seen.has(g) ? rest : first).push(k);
+    seen.add(g);
+  }
+  const keys = [...first, ...rest].slice(0, 9);
   $("#samples").innerHTML = keys.map(k =>
     // crossorigin so the click handler can re-fetch the same bytes as a blob.
     // Without it the <img> caches an opaque response and the later fetch() is
     // refused -- only visible when the UI and the API are on different ports.
     `<img crossorigin="anonymous" src="${API}/med_img/${man[k].file}" title="${man[k].brand}" data-f="${man[k].file}">`).join("");
-  $("#samples").onclick = e => {
+  $("#samples").onclick = async e => {
     if (e.target.tagName !== "IMG") return;
-    $("#vid").style.display = "none";
-    $("#shot").style.display = "block";
-    $("#shot").src = e.target.src;
+    // Await the decode before scanning: the box is positioned from
+    // naturalWidth/naturalHeight, which are zero until the image has loaded.
+    await showStill(e.target.src, false);
     scanBlobs([fetch(e.target.src).then(r => r.blob())]);
   };
 }
@@ -368,6 +827,7 @@ $("#cam").onclick = async () => {
       video:{ facingMode:"environment", width:{ideal:1920} }, audio:false });
     $("#vid").srcObject = s; await $("#vid").play();
     $("#vid").style.display = "block"; $("#shot").style.display = "none";
+    hideBox();
     $("#cam").textContent = "Camera live";
   }catch(e){ $("#cam").textContent = "Camera blocked — use cached boxes"; }
 };
@@ -392,6 +852,7 @@ $("#scan").onclick = () => {
 
 async function scanBlobs(promises){
   $("#vidwrap").classList.add("busy");
+  hideBox();
   const blobs = await Promise.all(promises);
   const fd = new FormData();
   blobs.forEach((b, i) => fd.append("frames", b, `f${i}.jpg`));
@@ -401,14 +862,218 @@ async function scanBlobs(promises){
   $("#vidwrap").classList.remove("busy");
   const d = await r.json();
   if (d.error){ $("#ocr").innerHTML = `<div style="color:var(--pl)">${d.error}</div>`; return; }
-  $("#ocr").innerHTML = d.ocr.map(b =>
-    `<div><span class="c">${b.confidence.toFixed(2)}</span><span>${esc(b.text)}</span></div>`
-  ).join("");
-  $("#q").style.display = "block";
-  $("#q").textContent = d.query;
-  $("#lat").textContent = `${Math.round(performance.now()-t0)} ms`;
+  // Nothing from the scan is echoed back any more: not the per-line Vision
+  // confidences (character confidences, not retrieval ones -- a column of 0.50s
+  // read as "half-certain match"), and now not the OCR string either. d.query is
+  // still what run() searches with, but it is no longer written anywhere on the
+  // page: the brand box over the still shows what was *identified*, not what was
+  // *read*, and #qtext is only filled from the scan-memory cards, not from here.
+  // So when Vision misreads a carton there is nothing on screen to see it in --
+  // one line, `$("#qtext").value = d.query`, would put it back in the search box
+  // instead of a panel of its own.
+  $("#ocr").innerHTML = "";
+
+  // Freeze the frame the brand was actually read in. A burst is five frames of
+  // a carton being held by hand, so the coordinates that came back belong to
+  // one of them and are wrong for the other four. This is also why the live
+  // video is swapped out for a still: a box pinned over a moving picture
+  // drifts off the words within a second of being drawn.
+  if (d.brand && blobs.length > 1){
+    const blob = blobs[Math.min(d.brand.frame || 0, blobs.length - 1)];
+    await showStill(URL.createObjectURL(blob), true);
+  }
+  await showBrand(d);
+  FROM_SCAN = true;
   run(d.query);
 }
+
+// ---------------------------------------------------------------- brand box
+let SHOT_OWNED = false;   // whether #shot.src is a blob URL this page must free
+let FROM_SCAN = false;    // this run() came from a scan, so the box still holds
+
+function showStill(src, owned){
+  return new Promise(res => {
+    const img = $("#shot");
+    if (SHOT_OWNED && img.src.startsWith("blob:")) URL.revokeObjectURL(img.src);
+    SHOT_OWNED = !!owned;
+    $("#vid").style.display = "none";
+    img.style.display = "block";
+    img.onload = img.onerror = () => res();
+    img.src = src;
+  });
+}
+
+const hideBox = () => { $("#bbox").style.display = "none"; };
+
+let BOX = null;   // last drawn box, kept so a resize can redraw it
+
+// The frame is rendered with object-fit:cover, so the image is scaled to fill
+// and then centre-cropped. Normalised OCR coordinates are relative to the
+// original image, not to what survived the crop, so the same transform has to
+// be reproduced here or the box lands somewhere plausible and wrong.
+function coverRect(img, wrap){
+  const cw = wrap.clientWidth, ch = wrap.clientHeight;
+  const iw = img.naturalWidth, ih = img.naturalHeight;
+  if (!iw || !ih || !cw || !ch) return null;
+  const s = Math.max(cw / iw, ch / ih);
+  return { x:(cw - iw*s)/2, y:(ch - ih*s)/2, w:iw*s, h:ih*s };
+}
+
+function placeBox(){
+  if (!BOX) return;
+  const r = coverRect($("#shot"), $("#vidwrap"));
+  if (!r) return;
+  const [bx, by, bw, bh] = BOX.box, el = $("#bbox");
+  const left = r.x + bx*r.w, top = r.y + by*r.h;
+  el.style.left   = left + "px";
+  el.style.top    = top + "px";
+  el.style.width  = (bw*r.w) + "px";
+  el.style.height = (bh*r.h) + "px";
+  // Labels are absolutely positioned against the box, so the room they have is
+  // whatever is left of the panel to their right, not the box's own width.
+  el.style.setProperty("--fw", Math.max(90, $("#vidwrap").clientWidth - left - 2) + "px");
+  el.classList.toggle("flip", top < 22);
+  el.style.display = "block";
+}
+addEventListener("resize", placeBox);
+
+async function showBrand(d){
+  const b = d.brand;
+  BOX = null;
+  if (!b || !b.box || $("#shot").style.display === "none") return void hideBox();
+  BOX = b;
+
+  const el = $("#bbox");
+  el.classList.toggle("unsure", !b.confident);
+  // p is the identification: how much of the shortlist's mass the leader holds.
+  // ocr is Vision's own confidence in the characters. Showing one without the
+  // other invites the wrong diagnosis when a scan goes badly.
+  el.querySelector(".lab").innerHTML =
+    `<span>${esc(b.short || b.brand || b.text)}</span><i>p ${b.p.toFixed(2)}</i>`;
+  el.querySelector(".lab").title = b.brand || "";
+  const ru = b.runner_up;
+  el.querySelector(".sub").textContent =
+    `${b.atc}${b.molecule ? " · " + b.molecule : ""} · ocr ${b.ocr_conf.toFixed(2)}`
+    // Only shown when the call is close, and worded as what it is: the carton
+    // did not say enough to separate two registry entries. Usually that is two
+    // strengths of one brand, which is a real ambiguity on the box and not a
+    // retrieval failure.
+    + (ru && !b.confident
+        ? ` · ${ru.same_brand ? "which strength? vs" : "vs"} ${ru.brand} ${ru.p.toFixed(2)}`
+        : "")
+    + (b.located_by === "name" ? "" : " · box = largest type, not a name match");
+  el.title = `identified against the ${LANGNAME[b.lang]||b.lang} register over `
+    + `${b.n_candidates} candidates`;
+  placeBox();
+
+  memAdd(b, cropThumb($("#shot"), b.box), d);
+}
+
+// A crop of the brand region rather than the whole carton: at 104px wide a
+// full frame is an unreadable smudge, and the point of the strip is to be
+// able to tell two boxes apart at a glance.
+function cropThumb(img, box, W=208, H=132){
+  const iw = img.naturalWidth, ih = img.naturalHeight;
+  if (!iw || !ih) return "";
+  let [x, y, w, h] = box;
+  // Text blocks are wide and shallow, so padding has to be asymmetric or the
+  // crop is a letterbox slit with no carton around it for context.
+  const px = w*0.20, py = h*1.10;
+  x = Math.max(0, x - px); y = Math.max(0, y - py);
+  w = Math.min(1 - x, w + 2*px); h = Math.min(1 - y, h + 2*py);
+  const c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  const sx = x*iw, sy = y*ih, sw = w*iw, sh = h*ih;
+  const s = Math.max(W/sw, H/sh);
+  try {
+    c.getContext("2d").drawImage(img, sx, sy, sw, sh,
+      (W - sw*s)/2, (H - sh*s)/2, sw*s, sh*s);
+    return c.toDataURL("image/jpeg", .72);
+  } catch { return ""; }   // tainted canvas: cross-origin image without CORS
+}
+
+// ---------------------------------------------------------------- scan memory
+// Client-side on purpose. The server is stateless and several people may drive
+// the demo from different tabs; "what have I scanned" is a property of this
+// session, not of the corpus. localStorage rather than memory so that a
+// mistimed reload on stage does not wipe the strip.
+const MEM_KEY = "med_scan_memory_v1", MEM_CAP = 40;
+let MEM = [];
+
+function memLoad(){
+  try { MEM = JSON.parse(localStorage.getItem(MEM_KEY)) || []; } catch { MEM = []; }
+}
+function memSave(){
+  try { localStorage.setItem(MEM_KEY, JSON.stringify(MEM)); }
+  catch {
+    // Thumbnails are the only thing here with any size, so drop the oldest
+    // half and keep the records rather than losing the memory to a quota.
+    MEM = MEM.slice(0, Math.max(1, MEM.length >> 1));
+    try { localStorage.setItem(MEM_KEY, JSON.stringify(MEM)); } catch {}
+  }
+}
+
+// Unique by product-as-read plus registry, not by ATC. Two brands of the same
+// molecule are two different cartons off the shelf even though the whole demo
+// turns on their sharing an ATC code, and collapsing them would hide exactly
+// the join the rest of the page is arguing for.
+function memAdd(b, thumb, d){
+  if (!b) return;
+  const name = (b.short || b.brand || b.text || "").trim();
+  if (!name) return;
+  // The detector abstains on thin margins and falls back to the pivot, so the
+  // language on the record is sometimes a default rather than a reading. Keep
+  // the difference: a strip that shows a guessed language as a read one is
+  // quietly lying about its own evidence.
+  const sure = !!(d && (d.override || (d.detected && d.detected.confident)));
+  const key = name.toLowerCase() + "|" + b.lang;
+  const prev = MEM.find(e => e.key === key);
+  if (prev){
+    prev.n++; prev.last = Date.now();
+    if (thumb && b.p >= prev.p){ prev.thumb = thumb; prev.p = b.p; prev.sure = sure; }
+  } else {
+    // full is kept alongside the short label because clicking a card re-runs
+    // the lookup, and the registry string retrieves better than the two words
+    // that fit on a 104px card.
+    MEM.unshift({ key, name, full:b.brand || name, atc:b.atc || "",
+                  molecule:b.molecule || "", lang:b.lang, p:b.p, ocr:b.ocr_conf,
+                  sure, thumb:thumb || "", n:1, last:Date.now() });
+    MEM = MEM.slice(0, MEM_CAP);
+  }
+  memSave(); memRender();
+}
+
+function memRender(){
+  $("#mem").hidden = !MEM.length;
+  if (!MEM.length) return;
+  const scans = MEM.reduce((a, e) => a + e.n, 0);
+  $("#memn").textContent = `${MEM.length} unique · ${scans} scan${scans>1?"s":""}`;
+
+  const by = {};
+  for (const e of MEM) by[e.lang] = (by[e.lang] || 0) + 1;
+  $("#memchips").innerHTML = Object.entries(by).sort((a,b) => b[1]-a[1])
+    .map(([l,n]) => `<span>${esc(LANGNAME[l]||l)} <b>${n}</b></span>`).join("");
+
+  $("#memlist").innerHTML = MEM.map((e, i) => `
+    <div class="card" data-i="${i}" title="${esc(e.name)} · ${esc(e.atc)}${
+        e.molecule ? " · " + esc(e.molecule) : ""} · identified p=${e.p} · ocr ${e.ocr}">
+      ${e.thumb ? `<img src="${e.thumb}" alt="">` : `<div style="height:66px"></div>`}
+      <div class="n">${esc(e.name)}</div>
+      <div class="f"><span class="flag ${e.lang}">${esc(e.lang)}${e.sure?"":"?"}</span>
+        <span>${esc(e.atc)}</span>${e.n>1?`<span class="x">×${e.n}</span>`:""}</div>
+    </div>`).join("");
+}
+
+$("#memlist").onclick = e => {
+  const c = e.target.closest(".card"); if (!c) return;
+  const m = MEM[+c.dataset.i]; if (!m) return;
+  const q = m.full || m.name;
+  $("#qtext").value = q;
+  run(q);
+};
+$("#memclr").onclick = () => {
+  MEM = []; memSave(); memRender();
+};
 
 // ---------------------------------------------------------------- search
 // Read the country of origin off the query text, and say so on screen.
@@ -429,7 +1094,7 @@ function showDetection(d){
   const name = (LANGNAME[d.lang] || d.lang || "?").toUpperCase();
   const badge = `<span class="big flag ${d.lang}">${name}</span>`;
   if (d.forced){
-    $("#det").innerHTML = badge + `<span>language forced by hand — the detector is bypassed</span>`;
+    $("#det").innerHTML = badge + `<span>language forced by hand</span>`;
     return;
   }
   if (d.abstained){
@@ -442,39 +1107,280 @@ function showDetection(d){
   // The tokens that decided it, strongest first. This is the whole argument for
   // a counting method over a model here -- it can show its work on stage.
   $("#det").innerHTML = badge + `<span>origin read off the box</span>`
-    + (d.evidence || []).slice(0,4).map(e =>
-        `<span class="ev">${esc(e.token)} → ${e.lang} ${e.share.toFixed(2)}</span>`).join("");
+    + `<span class="evrow">` + (d.evidence || []).slice(0,3).map(e =>
+        `<span class="ev">${esc(e.token)} → ${e.lang} ${e.share.toFixed(2)}</span>`).join("")
+    + `</span>`;
 }
 
 async function run(q){
+  // The box annotates the frozen frame, so it is only true while the frame is
+  // what is being answered. Typing a different product leaves the old carton on
+  // screen, and a box still labelled with the previous brand would be claiming
+  // the picture and the results match when they no longer do.
+  if (!FROM_SCAN) hideBox();
+  FROM_SCAN = false;
   LAST = q;
   const det = await detect(q);
   USED = det.lang;
   showDetection(det);
-  const t0 = performance.now();
+  drawTargetNote();          // the same-country warning depends on what was detected
   const d = await (await fetch(`${API}/api/med/compare?q=${encodeURIComponent(q)}`
     + `&dim=${DIM}&k=10&target=${TARGET}&qlang=${USED}`
     + (RERANK ? "&rerank=true" : "") + (PREFETCH ? "&prefetch=true" : ""))).json();
-  $("#lat").textContent = `${Math.round(performance.now()-t0)} ms · dim ${DIM}`
-    + (PREFETCH ? ` · via ${META.prefetch.dim}d` : "");
-  // Spanish is the pivot the offsets were estimated against, so it needs no
-  // correction and the two panels are identical by construction. Say so --
-  // otherwise it reads as a broken slider.
-  $("#qnote").textContent = USED === META.pivot
-    ? `${LANGNAME[META.pivot]} is the pivot language — no offset to subtract, both panels match`
-    : "";
-  $("#r1").parentElement.querySelector("h3").firstChild.textContent =
-    `SHIFT on · α=${d.on.alpha} `;
-  render("#r0", "#p0", d.off);
-  render("#r1", "#p1", d.on);
+  $("#a1").textContent = `α = ${d.on.alpha}`;
+  render("#r0", "#p0", "#m0", d.off);
+  render("#r1", "#p1", "#m1", d.on);
+  capHits();
   const want = TARGET || META.pivot;
   const top = (d.on.hits.find(h => h.lang === want) || d.on.hits[0]);
   if (top) drawGeometry(top.atc);
   if (META.sparse) runSparse(q, top ? top.atc : "");
 }
 
-function render(sel, pill, side){
+/* How many hits stand above the scroll. Two, not three: the panels moved to the
+   top of the middle column and the comparison is decided on the first row or two
+   anyway, so the shorter list buys vertical room for section 4 below it. */
+const VISIBLE_HITS = 2;
+
+/* Both lists get the same height, taken from whichever column's first two rows
+   are taller. Measuring instead of hard-coding a pixel count because a hit
+   is one line or two depending on the brand, and letting the two panels size
+   themselves independently would stagger rows that are meant to be read across. */
+function capHits(){
+  const boxes = [$("#r0"), $("#r1")];
+  boxes.forEach(b => b.style.maxHeight = "");
+  const h = Math.max(...boxes.map(b => {
+    const r = b.children;
+    return r.length > VISIBLE_HITS
+      ? r[VISIBLE_HITS].offsetTop - r[0].offsetTop : 0;
+  }));
+  // +16 leaves the next row peeking, which is the only honest signal that the
+  // list continues -- an overflow that ends flush at a border looks like the end.
+  boxes.forEach(b => b.style.maxHeight = h ? `${h + 16}px` : "");
+}
+
+/* ------------------------------------------------ SHIFT across encoders
+   Written by src/med/eval_models.py: the same alpha sweep, same 5,298 documents
+   and same evaluate() as every other number here, repeated per encoder. Absent
+   until that script has run, in which case the box simply does not appear --
+   the demo has never needed it to work. */
+// Alpha keys come from Python, where str(1.0) is "1.0"; JS String(1.0) is "1",
+// so indexing the sweep with the raw number silently misses every whole-numbered
+// alpha. Match numerically instead of trusting the two languages to format
+// floats the same way.
+const akey = (m, a) => Object.keys(m.sweep).find(k => Number(k) === Number(a));
+
+// The y axis: cross-border hits at the model's own best alpha, averaged over the
+// non-pivot languages. Deliberately the SHIFTED number rather than the raw one --
+// the question this box asks is which encoder to ship *with SHIFT applied*, and
+// two models can trade places between the two (jina starts least biased, e5
+// starts most, and the ordering after correction is not the ordering before).
+function shifted(M, m){
+  const k = akey(m, m.best_alpha);
+  const v = M.corpus.langs.map(l => m.sweep[k][l].tgt_hits_per_query);
+  return v.reduce((a, b) => a + b, 0) / v.length;
+}
+
+function drawModels(){
+  const M = META.models;
+  if (!M || !M.models || !M.models.length) return;
+  $("#mdlbox").hidden = false;
+
+  // Active (non-embedding) parameters, matching the axis the bekko card uses.
+  // A pruned-vocabulary model like bekko carries most of its weights in the
+  // token embedding matrix, which costs nothing per token at inference, so
+  // plotting totals would misprice exactly the models this chart exists to place.
+  const P = M.models.map(m => ({m, x: m.active_m || m.params_m, y: shifted(M, m)}));
+
+  // Pareto: nothing else is both smaller and at least as good. Strict on one
+  // side, so the arctic/e5 tie at 303.4M non-embedding params resolves on score
+  // rather than both surviving.
+  P.forEach(p => p.pareto = !P.some(q =>
+    q !== p && q.x <= p.x && q.y >= p.y && (q.x < p.x || q.y > p.y)));
+
+  const W = 306, H = 196, L = 26, R = 8, T = 10, B = 26;
+  const xs = P.map(p => p.x), ys = P.map(p => p.y);
+  // Log on x because the range is 8M to 300M -- linear would pile four of the
+  // five models into the left sixth of a 306px chart.
+  const lo = Math.log10(Math.min(...xs)), hi = Math.log10(Math.max(...xs));
+  const y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const px = v => L + (Math.log10(v) - lo) / ((hi - lo) || 1) * (W - L - R);
+  const py = v => T + (1 - (v - y0) / ((y1 - y0) || 1)) * (H - T - B);
+  // Insets so the extreme points are not drawn half outside the plot box.
+  const PX = v => L + 16 + (px(v) - L) * ((W - L - R - 30) / (W - L - R));
+  const PY = v => T + 10 + (py(v) - T) * ((H - T - B - 18) / (H - T - B));
+
+  const sorted = P.filter(p => p.pareto).sort((a, b) => a.x - b.x);
+  // Staircase, not a line through the points: hold the score flat until a bigger
+  // model actually improves on it, then step up. The horizontal run is the whole
+  // reading -- anywhere along it, the smaller model at its left end is the best
+  // thing available at that budget. Joining the dots diagonally would draw a
+  // trend that is not there and imply intermediate sizes that do not exist.
+  let cy = PY(sorted[0].y);
+  let d = `M${L},${cy}`;
+  sorted.forEach(p => {
+    d += `L${PX(p.x)},${cy}L${PX(p.x)},${PY(p.y)}`;
+    cy = PY(p.y);
+  });
+  d += `L${W - R},${cy}`;
+
+  const tick = v => v >= 100 ? `${Math.round(v)}M` : `${Math.round(v * 10) / 10}M`;
+  const xt = [Math.min(...xs), Math.max(...xs)];
+  const svg = $("#mdl");
+  svg.innerHTML =
+    `<path class="front" d="${d}L${W - R},${H - B}L${L},${H - B}Z"/>`
+    + `<path class="frontline" d="${d}"/>`
+    + `<line class="grid" x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}"/>`
+    + xt.map(v => `<text class="axt" x="${PX(v)}" y="${H - B + 10}"
+        text-anchor="middle">${tick(v)}</text>`).join("")
+    + [y0, y1].map(v => `<text class="axt" x="${L - 4}" y="${PY(v) + 3}"
+        text-anchor="end">${v.toFixed(2)}</text>`).join("")
+    + `<text class="axl" x="${(L + W - R) / 2}" y="${H - 3}" text-anchor="middle"
+        >active params, log &mdash; fewer is better</text>`
+    + P.map((p, i) => {
+      const x = PX(p.x), y = PY(p.y);
+      // Labels flip to the inside near the right edge, where an outward label
+      // would run off the rail. Two models share the largest x, so they are also
+      // nudged apart vertically by which of the pair scores higher.
+      const right = x > L + (W - L - R) * 0.62;
+      // A frontier point's own horizontal run leaves it heading right at exactly
+      // its own y, so a label placed rightward would lie along the line. Drop
+      // those under the dot; the halo above handles whatever is left.
+      const dy = (p.pareto && !right) ? 12 : 3;
+      return `<g class="pt ${p.pareto ? "pareto" : ""}" data-v="${i}"
+          role="button" tabindex="0" aria-label="${esc(p.m.short)}">`
+        + `<circle class="d" cx="${x}" cy="${y}" r="4"/>`
+        + `<text x="${right ? x - 8 : x + 6}" y="${y + dy}"
+            text-anchor="${right ? "end" : "start"}">${esc(p.m.short)}</text>`
+        + `<circle class="hit" cx="${x}" cy="${y}" r="10"/></g>`;
+    }).join("");
+
+  // Placing each label beside its own dot is fine until two models land close
+  // together -- e5-large and bekko-a25m sit 0.03 apart on this axis and their
+  // names collide. One pass, top down, nudging any label that lands on an
+  // already-placed one: the lower of a colliding pair moves, so labels drift
+  // away from the crowded region rather than into it. Done after insertion
+  // because it needs the rendered text width, which depends on the font.
+  const placed = [];
+  [...svg.querySelectorAll(".pt text")]
+    .sort((a, b) => a.getBBox().y - b.getBBox().y)
+    .forEach(t => {
+      let b = t.getBBox(), guard = 0;
+      while (guard++ < 8 && placed.some(p =>
+          b.x < p.x + p.width && p.x < b.x + b.width
+          && b.y < p.y + p.height && p.y < b.y + b.height)) {
+        t.setAttribute("y", +t.getAttribute("y") + 10);
+        b = t.getBBox();
+      }
+      placed.push(b);
+    });
+
+  const pick = i => {
+    svg.querySelectorAll(".pt").forEach(g =>
+      g.classList.toggle("on", +g.dataset.v === i));
+    showModel(M, M.models[i]);
+  };
+  svg.querySelectorAll(".pt").forEach(g => {
+    const i = +g.dataset.v;
+    g.addEventListener("click", () => pick(i));
+    g.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(i); }
+    });
+  });
+  // The served encoder is selected first, so the first thing on screen is the
+  // model the panels underneath are actually using.
+  pick(Math.max(M.models.findIndex(m => m.repo === META.model), 0));
+}
+
+function showModel(M, m){
+  const best = akey(m, m.best_alpha), zero = akey(m, 0);
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  const PV = cap(LANGNAME[M.corpus.pivot] || M.corpus.pivot);
+
+  // One block per metric rather than one table per metric: all three are read
+  // off the same alpha=0 / alpha=best comparison, so sharing the columns keeps
+  // the delta in the same place for all of them and makes it obvious that the
+  // headline metric moves least. dp differs because the three live on different
+  // scales -- hits/query is a count and runs past 1, the other two are in [0,1].
+  const block = (title, field, dp) =>
+    `<tr class="sec"><td colspan="4">${title}</td></tr>`
+    + M.corpus.langs.map(l => {
+      const off = m.sweep[zero][l][field], on = m.sweep[best][l][field];
+      const d = on - off;
+      return `<tr><td class="lbl">${LANGNAME[l]||l} &rarr; ${LANGNAME[M.corpus.pivot]}</td>`
+        + `<td class="n">${off.toFixed(dp)}</td><td class="n">${on.toFixed(dp)}</td>`
+        + `<td class="n ${d > 0 ? "up" : ""}">${d >= 0 ? "+" : ""}${d.toFixed(dp)}</td></tr>`;
+    }).join("");
+
+  // Both metric names are borrowed from the SHIFT write-up and neither is
+  // self-explanatory on a slide, so each carries its definition on hover. The
+  // text says what is counted, not what the acronym expands to: "target-language
+  // recall" is already spelled out in the caption and expanding it again teaches
+  // nobody why the two numbers move by such different amounts.
+  // attr() renders text only, so these stay unmarked-up and quote-free -- esc()
+  // does not escape quotes and this lands in a double-quoted attribute.
+  const tip = (name, text, up) =>
+    `<span class="mtip${up ? " up" : ""}" tabindex="0" data-tip="${esc(text)}">${name}</span>`;
+
+  $("#mdltab").innerHTML =
+    `<tr class="hdr"><td>query language</td><td class="n">&alpha;=0</td>`
+    // `best` is the JSON key, so alpha reads "1.0" like the rest of the grid
+    // rather than JS's bare "1".
+    + `<td class="n">&alpha;=${best}</td><td class="n">&Delta;</td></tr>`
+    + block(`${PV} hits in top 10, per query`, "tgt_hits_per_query", 3)
+    + block(tip("nDCG@20",
+        "Normalised discounted cumulative gain at rank 20. Every record for the "
+        + "same molecule counts as relevant, in any language, with higher ranks "
+        + "weighted more. 1.0 means the whole molecule is at the top.")
+        + " &mdash; overall ranking", "ndcg20", 4)
+    + block(tip("TLR@20",
+        `Target-language recall at 20: of all the ${PV} records for the query's `
+        + `molecule, the share that reached the top 20. Uncapped, so a molecule `
+        + `with more than 20 ${PV} products cannot score 1 however good the `
+        + `ranking is.`, true)
+        + " &mdash; target-language recall", "tlr20", 4);
+
+  // The SHIFT post's sentence -- "nDCG@20 rises from 0.633 to 0.737 ... as
+  // TLR@20 jumps the most, freed of the bias" -- said in the same two metrics
+  // but with this corpus's numbers instead of the paper's. The shape of the
+  // claim survives the substitution: nDCG moves a little, TLR moves a lot.
+  // Written about whichever language gains most on TLR, which is what "jumps
+  // the most" means, rather than a language fixed in the source.
+  const per = M.corpus.langs.map(l => ({l,
+    n0: m.sweep[zero][l].ndcg20, n1: m.sweep[best][l].ndcg20,
+    t0: m.sweep[zero][l].tlr20, t1: m.sweep[best][l].tlr20}));
+  const top = per.reduce((a, b) => (b.t1 - b.t0) > (a.t1 - a.t0) ? b : a);
+  // LANGNAME is lowercase because the table's label column is set as data, not
+  // prose. This line is prose, where a language name is a proper noun.
+  const pair = `<b>${cap(LANGNAME[top.l] || top.l)} &rarr; ${PV}</b>`;
+  // x.x-fold reads wrong at a small base -- TLR starts at 0.016 for e5, where
+  // "11x" is arithmetically true and rhetorically a lie. Ratios only above a
+  // floor where the denominator can carry them.
+  // Every measured quantity in the sentence is green, so the eye can pick the
+  // numbers out of the prose without reading it. Model name and metric names stay
+  // plain bold: they are labels, not results.
+  const g = s => `<b class="big">${s}</b>`;
+  const mult = top.t0 >= 0.05 ? ` (${g((top.t1 / top.t0).toFixed(1) + "&times;")})` : "";
+  // No em dashes. The TLR clause takes a colon and a comma instead, which is what
+  // the dashes were standing in for anyway.
+  $("#mdlintro").innerHTML =
+    `With SHIFT on, overall retrieval improves: for <b>${esc(m.short)}</b>, `
+    + `${pair} nDCG@20 rises from ${g(top.n0.toFixed(3))} to `
+    + `${g(top.n1.toFixed(3))} at &alpha;=${g(best)}. The cross-language metric, `
+    + `<b>TLR@20</b> (target-language recall), jumps the most: `
+    + `${g(top.t0.toFixed(3))} to ${g(top.t1.toFixed(3))}`
+    + `${mult}, freed of the bias.`;
+  // The footnote that used to sit under the table is gone. Two things it carried
+  // are now speaker-only: why nDCG barely moves while TLR jumps (the hover
+  // definitions on the two metric names cover this), and that alpha is fitted per
+  // model rather than inherited from arctic. The alpha column header already says
+  // which value it is; that it was *chosen* is not on screen anywhere.
+}
+
+function render(sel, pill, more, side){
   const shown = side.hits;
+  $(more).textContent = shown.length > VISIBLE_HITS
+    ? `${shown.length - VISIBLE_HITS} more · scroll` : "";
   // Without a filter the pill is the spillover number: how much of the list
   // came back in the language you are actually shopping in.
   const want = LANGNAME[TARGET || META.pivot] || (TARGET || META.pivot);
@@ -483,7 +1389,9 @@ function render(sel, pill, side){
     : `${Math.round(side.tgt_share*100)}% ${want}`;
   $(sel).innerHTML = shown.map(h => `
     <div class="hit">
-      ${h.photo ? `<img src="${API}/med_img/${h.photo}">` : `<div class="ph"></div>`}
+      ${h.photo
+        ? `<img src="${API}/med_img/${h.photo}" title="${esc(h.brand)} — its own packaging shot">`
+        : `<div class="ph" title="no packaging photo: only the Spanish registry (CIMA) publishes them">no&nbsp;photo</div>`}
       <div>
         <div class="b">${esc(h.brand)} <span class="flag ${h.lang}">${h.lang}</span></div>
         <div class="m">${esc(h.text)}</div>
@@ -538,70 +1446,411 @@ async function runSparse(q, gold){
 }
 
 // ---------------------------------------------------------------- geometry
-async function drawGeometry(atc){
-  const d = await (await fetch(`${API}/api/med/geometry?atc=${encodeURIComponent(atc)}`)).json();
-  $("#path").innerHTML = d.path.map(p =>
-    `<span title="${esc(p.name)}">${p.code}</span>`).join("");
-  disk($("#cp"), d.nodes, "poincare", true);
-  disk($("#ce"), d.nodes, "euclidean", false);
-}
-
+//
+// The tree is 534 nodes and arrives once. Everything after that -- hover,
+// select, search, zoom, pan -- is local, because the panel is meant to be
+// explored while talking and a request per hover would stutter on stage.
 const LEVEL_C = ["#5b8cff","#7d6bff","#c85fe0","#ff6fa0","#ff9f45"];
 
-function disk(cv, nodes, key, ring){
-  const g = cv.getContext("2d"), W = cv.width, H = cv.height;
-  g.clearRect(0,0,W,H);
-  const cx = W/2, cy = H/2;
-  let R = W*0.46;
-  if (!ring){
-    const m = Math.max(...nodes.map(n => Math.hypot(...n[key]))) || 1;
-    R = W*0.46 / m;
+let GEO = null;                     // {nodes, byCode}
+let GSEL = null, GHOVER = null;     // selected / hovered code
+const VIEW = {                      // per-panel zoom+pan, independent
+  cp:{ k:1, x:0, y:0 }, ce:{ k:1, x:0, y:0 },
+};
+
+// ---- Mobius gyrovector ops, so the ancestor chain is drawn as a real
+// geodesic and not as a straight line. A straight segment between two points
+// of the Poincare disk is Euclidean geometry drawn in a hyperbolic space,
+// which is precisely the confusion this panel exists to dispel.
+const mAdd = (u, v) => {
+  const uv = u[0]*v[0] + u[1]*v[1], uu = u[0]*u[0]+u[1]*u[1], vv = v[0]*v[0]+v[1]*v[1];
+  const a = 1 + 2*uv + vv, b = 1 - uu, d = Math.max(1 + 2*uv + uu*vv, 1e-12);
+  return [(a*u[0] + b*v[0])/d, (a*u[1] + b*v[1])/d];
+};
+const mScal = (t, x) => {
+  const n = Math.hypot(x[0], x[1]);
+  if (n < 1e-12) return [0,0];
+  const s = Math.tanh(t * Math.atanh(Math.min(n, 1-1e-12))) / n;
+  return [x[0]*s, x[1]*s];
+};
+function geodesic(u, v, steps=48){
+  const w = mAdd([-u[0],-u[1]], v), out = [];
+  for (let i=0;i<=steps;i++) out.push(mAdd(u, mScal(i/steps, w)));
+  return out;
+}
+
+async function drawGeometry(atc){
+  if (!GEO){
+    const d = await (await fetch(`${API}/api/med/geometry`)).json();
+    // The Poincare disk is unit-bounded by construction; the Euclidean cloud
+    // is not, so it needs its own extent to fill the same box. Measured once:
+    // proj() is called per node per repaint, and rescanning there made panning
+    // quadratic.
+    GEO = {
+      nodes: d.nodes,
+      byCode: Object.fromEntries(d.nodes.map(n => [n.code, n])),
+      emax: Math.max(...d.nodes.map(n => Math.hypot(...n.euclidean))) || 1,
+    };
+    if (d.map){
+      if (d.map.poincare != null) $("#mapp").textContent = d.map.poincare.toFixed(3);
+      if (d.map.euclidean != null) $("#mape").textContent = d.map.euclidean.toFixed(3);
+    }
+    wireGeoChips();
   }
+  if (atc !== undefined) GSEL = atc || null;
+  renderGeo();
+}
+
+// The chain from a code up to its level-1 letter, as codes.
+function ancestry(code){
+  const out = [];
+  let c = GEO.byCode[code];
+  while (c){ out.unshift(c.code); c = c.parent ? GEO.byCode[c.parent] : null; }
+  return out;
+}
+
+function renderGeo(){
+  if (!GEO) return;
+  // Still needed for the hop count in #gsel below, even though the breadcrumb
+  // it used to render in the right rail is gone.
+  const path = GSEL ? ancestry(GSEL) : [];
+
+  if (GSEL){
+    const n = GEO.byCode[GSEL];
+    $("#gsel").innerHTML = `<b>${esc(n.name || GSEL)}</b> · level ${n.level}`
+      + ` · radius <span class="hop">${n.radius}</span>`
+      + (n.n_children ? ` · ${n.n_children} child${n.n_children>1?"ren":""}` : " · leaf")
+      + ` · <span class="hop">${path.length-1}</span> hop${path.length-1===1?"":"s"} to root`;
+  } else {
+    $("#gsel").innerHTML = `<span style="color:var(--dim2)">`
+      + `hover a node to read it, click to trace its chain</span>`;
+  }
+  paint("cp", "poincare", true, path);
+  paint("ce", "euclidean", false, path);
+  $("#zlcp").textContent = VIEW.cp.k.toFixed(1) + "\u00d7";
+  $("#zlce").textContent = VIEW.ce.k.toFixed(1) + "\u00d7";
+  document.querySelectorAll("#gchips button").forEach(b =>
+    b.classList.toggle("on", b.dataset.code === GSEL));
+  loadNeighbors(GSEL);
+}
+
+// ---- nearest neighbours, in the 10D spaces the MAP numbers were measured on.
+// The panels draw a 2D projection because ten dimensions do not fit on a
+// screen; reading distances off that drawing would be quoting the picture
+// instead of the model, and the 2D fit is measurably worse (MAP 0.778 vs
+// 0.831 hyperbolic, 0.503 vs 0.737 Euclidean). So these come from the server.
+let NB_FOR = undefined, NB_SEQ = 0;
+
+function nbBadge(d, lo, hi){
+  return d <= lo ? "near" : d <= hi ? "mid" : "far";
+}
+
+function nbRows(list, lo, hi){
+  if (!list.length) return `<div class="empty">&mdash;</div>`;
+  return list.map(n => `<div class="r${n.kin ? " kin" : ""}" data-code="${n.code}"`
+    + ` title="${esc(n.name)}${n.kin ? " — taxonomic relative" : ""}">`
+    + `<span class="c">${n.code}</span>`
+    + `<span class="n">${esc(n.name || "")}</span>`
+    + `<span class="d ${nbBadge(n.d, lo, hi)}">${n.d.toFixed(2)}</span></div>`).join("");
+}
+
+async function loadNeighbors(code){
+  if (code === NB_FOR) return;
+  NB_FOR = code;
+  if (!code){
+    $("#nbp").innerHTML = `<div class="empty">select a node to compare its neighbourhood</div>`;
+    $("#nbe").innerHTML = `<div class="empty">&mdash;</div>`;
+    return;
+  }
+  const seq = ++NB_SEQ;
+  let d;
+  try { d = await (await fetch(`${API}/api/med/geometry/neighbors`
+    + `?code=${encodeURIComponent(code)}&k=6`)).json(); }
+  catch { return; }
+  if (seq !== NB_SEQ) return;          // a later click already won
+  if (!d.found){
+    $("#nbp").innerHTML = $("#nbe").innerHTML = `<div class="empty">not in the embedding</div>`;
+    return;
+  }
+  // Thresholds per list, because the two spaces are not on a common scale --
+  // one hyperbolic unit is not one Euclidean unit, and colouring both off the
+  // same cutoffs would make Euclidean look uniformly closer for free.
+  const scale = l => {
+    const v = l.map(n => n.d);
+    return [v[0] + (v[v.length-1] - v[0]) * 0.34,
+            v[0] + (v[v.length-1] - v[0]) * 0.67];
+  };
+  const [pl, ph] = scale(d.poincare), [el, eh] = scale(d.euclidean);
+  $("#nbp").innerHTML = nbRows(d.poincare, pl, ph);
+  $("#nbe").innerHTML = nbRows(d.euclidean, el, eh);
+  // The note under the two lists is gone. `d.kin` still arrives from the server
+  // and the green codes still mark taxonomic relatives, but nothing on screen
+  // now says so, nor that the k=6 readout is a tie (0.817 vs 0.812) while the
+  // MAP gap that favours hyperbolic (0.831 vs 0.737) is directional and reverses
+  // when asked ancestor -> descendants. All of that is speaker-only now.
+}
+
+// Map a node's model coordinates to canvas pixels under the panel's transform.
+function proj(cv, key, n){
+  const v = VIEW[cv.id], W = cv.width;
+  const R = key === "euclidean" ? W*0.46/GEO.emax : W*0.46;
+  const [x,y] = n[key] ? n[key] : n;   // accepts a raw [x,y] too
+  return [W/2 + (x*R)*v.k + v.x, W/2 - (y*R)*v.k + v.y];
+}
+
+function paint(id, key, ring, path){
+  const cv = $("#"+id), g = cv.getContext("2d"), W = cv.width;
+  const v = VIEW[id], onPath = new Set(path);
+  g.clearRect(0,0,W,W);
+
+  const R = ring ? W*0.46 : W*0.46/GEO.emax;
   if (ring){
     g.strokeStyle = "#1c2030"; g.lineWidth = 1;
     for (const f of [.25,.5,.75,1]){
-      g.beginPath(); g.arc(cx,cy,R*f,0,7); g.stroke();
+      g.beginPath();
+      g.arc(W/2 + v.x, W/2 + v.y, R*f*v.k, 0, 7);
+      g.stroke();
     }
   }
-  for (const n of nodes){
-    const [x,y] = n[key];
-    const px = cx + x*R, py = cy - y*R;
-    const lv = (n.level||1) - 1;
+
+  // The chain, drawn before the nodes so the dots sit on top of it. In the
+  // Poincare panel it follows the true geodesic; in the Euclidean panel a
+  // straight line IS the geodesic, so the same chain is drawn straight. The
+  // visual difference between the two panels is the honest one.
+  if (path.length > 1){
+    g.strokeStyle = "#5b8cff"; g.lineWidth = 1.6;
     g.beginPath();
-    g.arc(px, py, n.on_path ? 5 : 1.9, 0, 7);
-    g.fillStyle = n.on_path ? "#fff" : LEVEL_C[lv] + "b0";
+    for (let i=0;i<path.length-1;i++){
+      const a = GEO.byCode[path[i]], b = GEO.byCode[path[i+1]];
+      if (!a || !b) continue;
+      const pts = ring ? geodesic(a.poincare, b.poincare)
+                       : [a.euclidean, b.euclidean];
+      pts.forEach((p, j) => {
+        const [px,py] = proj(cv, key, p);
+        j ? g.lineTo(px,py) : g.moveTo(px,py);
+      });
+    }
+    g.stroke();
+  }
+
+  for (const n of GEO.nodes){
+    const [px,py] = proj(cv, key, n);
+    if (px < -20 || py < -20 || px > W+20 || py > W+20) continue;
+    const sel = n.code === GSEL, hov = n.code === GHOVER, on = onPath.has(n.code);
+    g.beginPath();
+    g.arc(px, py, sel ? 6 : hov ? 5 : on ? 4 : 2.1, 0, 7);
+    g.fillStyle = sel ? "#fff" : on ? "#cfe0ff" : LEVEL_C[(n.level||1)-1] + "b0";
     g.fill();
-    if (n.on_path){
-      g.strokeStyle = "#5b8cff"; g.lineWidth = 2; g.stroke();
+    if (sel || hov){
+      g.strokeStyle = sel ? "#5b8cff" : "#fff"; g.lineWidth = 2; g.stroke();
     }
   }
 }
 
-// ---------------------------------------------------------------- matryoshka
-function drawMRL(){
-  const a = META.matryoshka.arctic_mrl, e = META.matryoshka.e5_control;
-  const full = a[String(META.dims[0])].tgt_hits_per_query;
-  const rows = META.dims.map(d => {
-    const v = a[String(d)].tgt_hits_per_query;
-    return { k:`${d}d`, v, pct:v/full, bytes:d*4, warn:d < 256 };
-  });
-  $("#mrl").innerHTML = rows.map(r => `
-    <div class="bar">
-      <span class="k">${r.k}</span>
-      <span class="track"><span class="fill ${r.warn?"warn":""}"
-        style="width:${(r.pct*100).toFixed(1)}%"></span></span>
-      <span class="v">${r.bytes}B</span>
-    </div>`).join("");
-  const a256 = a["256"].tgt_hits_per_query / full;
-  const eDims = Object.keys(e).map(Number).sort((x,y) => y-x);
-  const e256 = e["256"].tgt_hits_per_query / e[String(eDims[0])].tgt_hits_per_query;
-  $("#mrlnote").innerHTML =
-    `At 256 dimensions Arctic keeps <b style="color:var(--es)">${(a256*100).toFixed(0)}%</b>
-     of its cross-border hits for a quarter of the bytes. The same cut on a model
-     without MRL keeps <b style="color:var(--pl)">${(e256*100).toFixed(0)}%</b>.
-     Below 256 Arctic falls off too — that is where Snowflake stopped training the
-     objective, and the guarantee stops with it.`;
+// Nearest node to a pointer position, in canvas pixels, within a radius.
+function pick(cv, key, mx, my, tol=11){
+  let best = null, bd = tol*tol;
+  for (const n of GEO.nodes){
+    const [px,py] = proj(cv, key, n);
+    const d = (px-mx)*(px-mx) + (py-my)*(py-my);
+    if (d < bd){ bd = d; best = n; }
+  }
+  return best;
 }
+
+function wireCanvas(id, key){
+  const cv = $("#"+id), v = VIEW[id];
+  // Canvas is 600x600 internally but laid out at panel width, so pointer
+  // coordinates have to be scaled into the backing store or every hit test is
+  // off by the ratio between the two.
+  const toCanvas = e => {
+    const r = cv.getBoundingClientRect();
+    return [(e.clientX-r.left) * cv.width/r.width,
+            (e.clientY-r.top)  * cv.height/r.height];
+  };
+
+  let drag = null;
+  cv.addEventListener("pointerdown", e => {
+    drag = { x:e.clientX, y:e.clientY, vx:v.x, vy:v.y, moved:false };
+    cv.setPointerCapture(e.pointerId); cv.classList.add("drag");
+  });
+  cv.addEventListener("pointermove", e => {
+    if (drag){
+      const dx = e.clientX-drag.x, dy = e.clientY-drag.y;
+      if (Math.abs(dx)+Math.abs(dy) > 3) drag.moved = true;
+      const r = cv.getBoundingClientRect(), s = cv.width/r.width;
+      v.x = drag.vx + dx*s; v.y = drag.vy + dy*s;
+      renderGeo();
+      return;
+    }
+    const [mx,my] = toCanvas(e);
+    const n = pick(cv, key, mx, my);
+    const code = n ? n.code : null;
+    if (code !== GHOVER){ GHOVER = code; renderGeo(); }
+    if (n) showTip(e, n); else hideTip();
+  });
+  const end = e => {
+    if (drag && !drag.moved){
+      const [mx,my] = toCanvas(e);
+      const n = pick(cv, key, mx, my);
+      // Clicking empty space clears, which is the obvious way to undo a
+      // selection without hunting for a button.
+      GSEL = n ? (n.code === GSEL ? null : n.code) : null;
+      renderGeo();
+    }
+    drag = null; cv.classList.remove("drag");
+  };
+  cv.addEventListener("pointerup", end);
+  cv.addEventListener("pointercancel", () => { drag = null; cv.classList.remove("drag"); });
+  cv.addEventListener("pointerleave", () => { hideTip(); if (GHOVER){ GHOVER = null; renderGeo(); } });
+
+  cv.addEventListener("wheel", e => {
+    e.preventDefault();
+    const [mx,my] = toCanvas(e);
+    const f = e.deltaY < 0 ? 1.12 : 1/1.12;
+    zoomAt(id, f, mx, my);
+  }, { passive:false });
+
+  cv.addEventListener("dblclick", () => { v.k=1; v.x=0; v.y=0; renderGeo(); });
+}
+
+// Zoom about a fixed point, so the thing under the cursor stays under it.
+function zoomAt(id, f, mx, my){
+  const v = VIEW[id], cv = $("#"+id), c = cv.width/2;
+  const k2 = Math.max(0.5, Math.min(14, v.k*f));
+  const r = k2/v.k;
+  v.x = mx - c - (mx - c - v.x)*r;
+  v.y = my - c - (my - c - v.y)*r;
+  v.k = k2;
+  renderGeo();
+}
+
+function showTip(e, n){
+  const t = $("#gtip");
+  t.innerHTML = `<div class="c">${n.code}</div><div class="n">${esc(n.name||"")}</div>`
+    + `<div class="r">level ${n.level} · radius ${n.radius} · `
+    + `${n.n_children ? n.n_children + " children" : "leaf"}</div>`;
+  t.style.display = "block";
+  // Flip before the viewport edge rather than after, or the tooltip is clipped
+  // by the window on the right-hand column where this panel lives.
+  const w = t.offsetWidth, h = t.offsetHeight;
+  t.style.left = Math.min(e.clientX + 13, innerWidth - w - 8) + "px";
+  t.style.top  = Math.max(6, Math.min(e.clientY + 13, innerHeight - h - 8)) + "px";
+}
+const hideTip = () => { $("#gtip").style.display = "none"; };
+
+// ---- search over the tree: code prefix or a word in the name
+function geoSearch(q){
+  q = q.trim().toLowerCase();
+  if (!q) return [];
+  const starts = [], has = [];
+  for (const n of GEO.nodes){
+    const c = n.code.toLowerCase(), nm = (n.name||"").toLowerCase();
+    if (c === q || nm === q) starts.unshift(n);
+    else if (c.startsWith(q) || nm.startsWith(q)) starts.push(n);
+    else if (nm.includes(q)) has.push(n);
+  }
+  return [...starts, ...has].slice(0, 7);
+}
+
+// Set by wireGeoSearch. The chips and the neighbour rows need the same
+// "select it and centre both panels on it" behaviour the search box has, and
+// duplicating the centring maths is how the two drift apart.
+let gotoNode = null;
+
+// Chosen to land in nine different ATC level-1 groups. A row of examples that
+// all resolve to painkillers teaches nothing about a tree with fourteen
+// branches, and it is the branches that make the disk worth looking at.
+const GEO_CHIPS = ["N02BE01", "A10BA02", "J01CA04", "C03CA01",
+                   "M01AE01", "R01AD09", "G04BE08", "L01EX01", "B01AC06"];
+
+function wireGeoChips(){
+  const box = $("#gchips");
+  box.innerHTML = GEO_CHIPS.map(c => {
+    const n = GEO.byCode[c];
+    return n ? `<button data-code="${c}" title="${c}">${esc(n.name || c)}</button>` : "";
+  }).join("");
+  box.onclick = e => {
+    const b = e.target.closest("button[data-code]"); if (!b) return;
+    gotoNode && gotoNode(GEO.byCode[b.dataset.code]);
+  };
+}
+
+function wireGeoSearch(){
+  const box = $("#gsearch"), list = $("#ghits");
+  let cur = -1, res = [];
+  const draw = () => {
+    list.innerHTML = res.map((n,i) =>
+      `<div data-i="${i}" class="${i===cur?"sel":""}">`
+      + `<span class="c">${n.code}</span>${esc(n.name||"")}</div>`).join("");
+  };
+  const choose = n => {
+    if (!n) return;
+    GSEL = n.code; res = []; cur = -1; draw();
+    box.value = n.name || n.code;
+    // Centre the selection in both panels: finding a node by name and then
+    // having to hunt for it on the disk would defeat the search.
+    for (const [id,key] of [["cp","poincare"],["ce","euclidean"]]){
+      const cv = $("#"+id), v = VIEW[id];
+      v.k = Math.max(v.k, 2.4);
+      v.x = 0; v.y = 0;
+      const [px,py] = proj(cv, key, n);
+      v.x += cv.width/2 - px; v.y += cv.height/2 - py;
+    }
+    renderGeo();
+  };
+  gotoNode = choose;
+  box.oninput = () => { res = GEO ? geoSearch(box.value) : []; cur = -1; draw(); };
+  box.onkeydown = e => {
+    if (e.key === "ArrowDown"){ cur = Math.min(cur+1, res.length-1); draw(); e.preventDefault(); }
+    else if (e.key === "ArrowUp"){ cur = Math.max(cur-1, 0); draw(); e.preventDefault(); }
+    else if (e.key === "Enter") choose(res[Math.max(cur,0)]);
+    else if (e.key === "Escape"){ res = []; draw(); box.blur(); }
+  };
+  list.onclick = e => {
+    const d = e.target.closest("div[data-i]"); if (d) choose(res[+d.dataset.i]);
+  };
+}
+
+// Clicking a neighbour walks to it, which is the whole way you explore a tree:
+// land on ibuprofen, see its neighbourhood, step into one of them.
+for (const id of ["#nbp", "#nbe"]){
+  document.addEventListener("click", e => {
+    const host = e.target.closest(id); if (!host) return;
+    const r = e.target.closest(".r[data-code]"); if (!r) return;
+    gotoNode && gotoNode(GEO.byCode[r.dataset.code]);
+  });
+}
+
+document.addEventListener("click", e => {
+  const b = e.target.closest(".zoom button"); if (!b) return;
+  const id = b.dataset.c, cv = $("#"+id);
+  if (b.dataset.full) return void toggleFull(id);
+  const z = +b.dataset.z;
+  if (!z){ VIEW[id] = { k:1, x:0, y:0 }; renderGeo(); }
+  else zoomAt(id, z, cv.width/2, cv.height/2);
+});
+
+// proj() treats cv.width as the whole coordinate frame, so growing the canvas
+// means growing its backing store, not just its CSS box -- stretching a 600px
+// buffer over 860px would blur the dots and put every hit test off by the
+// ratio. The pan offset is in backing-store pixels, so it is rescaled with it.
+function toggleFull(id){
+  const cv = $("#"+id), wrap = cv.closest(".gwrap"), v = VIEW[id];
+  const on = !wrap.classList.contains("full");
+  document.querySelectorAll(".gwrap").forEach(w => w.classList.remove("full"));
+  if (on) wrap.classList.add("full");
+  const side = on ? Math.round(Math.min(innerWidth, innerHeight) - 56) : 600;
+  const r = side / cv.width;
+  cv.width = cv.height = side;
+  v.x *= r; v.y *= r;
+  hideTip();
+  renderGeo();
+}
+addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  const w = $(".gwrap.full"); if (w) toggleFull(w.querySelector("canvas").id);
+});
 
 boot();
 </script>

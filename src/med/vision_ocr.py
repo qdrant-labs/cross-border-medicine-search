@@ -35,11 +35,16 @@ def _cgimage(image_bytes):
 
 
 def read(image_bytes, langs=LANGS, min_conf=MIN_CONFIDENCE):
-    """Image bytes -> [{text, confidence, area}], reading order preserved.
+    """Image bytes -> [{text, confidence, area, box}], reading order preserved.
 
     'area' is the fraction of the frame the text block occupies. Box artwork
     puts the brand in the largest type, so area is a usable proxy for "this is
     the name of the product" versus "this is the dosage small print".
+
+    'box' is [x, y, w, h] as fractions of the frame, with the origin at the
+    TOP-left. Vision hands back a bottom-left origin because it inherits Core
+    Graphics' convention; every consumer here is a browser, where y grows
+    downward, so the flip happens once at the source rather than in each caller.
     """
     req = Vision.VNRecognizeTextRequest.alloc().init()
     req.setRecognitionLevel_(Vision.VNRequestTextRecognitionLevelAccurate)
@@ -61,10 +66,14 @@ def read(image_bytes, langs=LANGS, min_conf=MIN_CONFIDENCE):
         if c.confidence() < min_conf:
             continue
         bb = obs.boundingBox()
+        w, h = float(bb.size.width), float(bb.size.height)
         out.append({
             "text": c.string(),
             "confidence": round(float(c.confidence()), 3),
-            "area": round(float(bb.size.width * bb.size.height), 5),
+            "area": round(w * h, 5),
+            "box": [round(float(bb.origin.x), 4),
+                    round(1.0 - float(bb.origin.y) - h, 4),
+                    round(w, 4), round(h, 4)],
         })
     return out
 

@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1096" viewBox="0 0 1600 1096"><rect width="1600" height="1096" fill="#08090d"/>
+<text x="60" y="56" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="27" fill="#e6e9f2" text-anchor="start" font-weight="700">Matryoshka embeddings in this project</text>
+<text x="60" y="82" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="13" fill="#767d96" text-anchor="start" font-weight="400">Cross-border medicine lookup · 5,298 products from the Polish, Spanish and Dutch registries · every number below is measured, not quoted</text>
+<line x1="60" y1="104" x2="1540" y2="104" stroke="#1c2030"/>
+<circle cx="69" cy="143" r="9" fill="#262c40"/><text x="69" y="147" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="11" fill="#767d96" text-anchor="middle" font-weight="600">1</text><text x="86" y="148" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="16" fill="#e6e9f2" text-anchor="start" font-weight="600">One vector. The first N dimensions are already an embedding.</text>
+<text x="86" y="172" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="13" fill="#767d96" text-anchor="start" font-weight="400">Matryoshka Representation Learning trains the prefixes to stand alone, so truncating is a slice and a renormalise — not a projection, not a second model.</text>
+<rect x="86.0" y="196" width="89.25" height="54" fill="#3ddc97" opacity="0.95"/>
+<rect x="175.25" y="196" width="89.25" height="54" fill="#3ddc97" opacity="0.62"/>
+<rect x="264.5" y="196" width="178.5" height="54" fill="#3ddc97" opacity="0.4"/>
+<rect x="443.0" y="196" width="357.0" height="54" fill="#5b8cff" opacity="0.26"/>
+<rect x="800.0" y="196" width="714.0" height="54" fill="#5b8cff" opacity="0.14"/>
+<rect x="86" y="196" width="1428" height="54" rx="4" fill="none" stroke="#262c40"/>
+<line x1="175.25" y1="196" x2="175.25" y2="258" stroke="#08090d" stroke-width="2"/>
+<text x="171.25" y="187" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="12" fill="#767d96" text-anchor="end" font-weight="400">64</text>
+<line x1="264.5" y1="196" x2="264.5" y2="258" stroke="#08090d" stroke-width="2"/>
+<text x="260.5" y="187" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="12" fill="#767d96" text-anchor="end" font-weight="400">128</text>
+<line x1="443.0" y1="196" x2="443.0" y2="258" stroke="#08090d" stroke-width="2"/>
+<text x="439.0" y="187" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="12" fill="#e6e9f2" text-anchor="end" font-weight="600">256</text>
+<line x1="800.0" y1="196" x2="800.0" y2="258" stroke="#08090d" stroke-width="2"/>
+<text x="796.0" y="187" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="12" fill="#767d96" text-anchor="end" font-weight="400">512</text>
+<text x="1510.0" y="187" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="12" fill="#767d96" text-anchor="end" font-weight="400">1024</text>
+<line x1="443.0" y1="170" x2="443.0" y2="280" stroke="#3ddc97" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="453.0" y="276" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="13" fill="#3ddc97" text-anchor="start" font-weight="600">this project ships 256d — a quarter of the vector</text>
+<text x="86" y="276" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#4a5169" text-anchor="start" font-weight="400">dimensions kept →</text>
+<rect x="1180" y="294" width="334" height="46" rx="5" fill="#101420" stroke="#262c40" stroke-width="1"/>
+<text x="1198" y="313" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="12.5" fill="#767d96" text-anchor="start" font-weight="400">v = v[:256]</text>
+<text x="1198" y="330" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="12.5" fill="#767d96" text-anchor="start" font-weight="400">v /= norm(v)</text>
+<line x1="60" y1="350" x2="1540" y2="350" stroke="#1c2030"/>
+<circle cx="69" cy="379" r="9" fill="#262c40"/><text x="69" y="383" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="11" fill="#767d96" text-anchor="middle" font-weight="600">2</text><text x="86" y="384" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="16" fill="#e6e9f2" text-anchor="start" font-weight="600">What truncation costs — and what happens without the training objective.</text>
+<text x="86" y="408" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="13" fill="#767d96" text-anchor="start" font-weight="400">5,298 registry records, Polish query → Spanish shelf. Each model against its own full width, so the lines compare robustness to truncation, not raw quality.</text>
+<line x1="250" y1="704.0" x2="1180" y2="704.0" stroke="#1c2030" stroke-width="1"/>
+<text x="238" y="708.0" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="11" fill="#4a5169" text-anchor="end" font-weight="400">0%</text>
+<line x1="250" y1="652.4" x2="1180" y2="652.4" stroke="#1c2030" stroke-width="1"/>
+<text x="238" y="656.4" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="11" fill="#4a5169" text-anchor="end" font-weight="400">25%</text>
+<line x1="250" y1="600.8" x2="1180" y2="600.8" stroke="#1c2030" stroke-width="1"/>
+<text x="238" y="604.8" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="11" fill="#4a5169" text-anchor="end" font-weight="400">50%</text>
+<line x1="250" y1="549.2" x2="1180" y2="549.2" stroke="#1c2030" stroke-width="1"/>
+<text x="238" y="553.2" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="11" fill="#4a5169" text-anchor="end" font-weight="400">75%</text>
+<line x1="250" y1="497.6" x2="1180" y2="497.6" stroke="#262c40" stroke-width="1" stroke-dasharray="3 3"/>
+<text x="238" y="501.6" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="11" fill="#4a5169" text-anchor="end" font-weight="400">100%</text>
+<line x1="250" y1="446.0" x2="1180" y2="446.0" stroke="#1c2030" stroke-width="1"/>
+<text x="238" y="450.0" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="11" fill="#4a5169" text-anchor="end" font-weight="400">125%</text>
+<line x1="250.0" y1="446" x2="250.0" y2="704" stroke="#1c2030" stroke-width="1" opacity="0.6"/>
+<text x="250.0" y="724" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="12" fill="#767d96" text-anchor="middle" font-weight="400">1024d</text>
+<text x="250.0" y="740" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="10" fill="#4a5169" text-anchor="middle" font-weight="400">4096B</text>
+<line x1="482.5" y1="446" x2="482.5" y2="704" stroke="#1c2030" stroke-width="1" opacity="0.6"/>
+<text x="482.5" y="724" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="12" fill="#767d96" text-anchor="middle" font-weight="400">512d</text>
+<text x="482.5" y="740" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="10" fill="#4a5169" text-anchor="middle" font-weight="400">2048B</text>
+<line x1="715.0" y1="446" x2="715.0" y2="704" stroke="#1c2030" stroke-width="1" opacity="0.6"/>
+<text x="715.0" y="724" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="12" fill="#e6e9f2" text-anchor="middle" font-weight="600">256d</text>
+<text x="715.0" y="740" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="10" fill="#4a5169" text-anchor="middle" font-weight="400">1024B</text>
+<line x1="947.5" y1="446" x2="947.5" y2="704" stroke="#1c2030" stroke-width="1" opacity="0.6"/>
+<text x="947.5" y="724" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="12" fill="#767d96" text-anchor="middle" font-weight="400">128d</text>
+<text x="947.5" y="740" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="10" fill="#4a5169" text-anchor="middle" font-weight="400">512B</text>
+<line x1="1180.0" y1="446" x2="1180.0" y2="704" stroke="#1c2030" stroke-width="1" opacity="0.6"/>
+<text x="1180.0" y="724" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="12" fill="#767d96" text-anchor="middle" font-weight="400">64d</text>
+<text x="1180.0" y="740" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="10" fill="#4a5169" text-anchor="middle" font-weight="400">256B</text>
+<path d="M250.0,497.6 L482.5,493.2 L715.0,488.0 L947.5,526.1 L1180.0,522.8" fill="none" stroke="#5b8cff" stroke-width="2.5" stroke-linejoin="round"/>
+<circle cx="250.0" cy="497.6" r="4.5" fill="#08090d" stroke="#5b8cff" stroke-width="2.5"/>
+<circle cx="482.5" cy="493.2" r="4.5" fill="#08090d" stroke="#5b8cff" stroke-width="2.5"/>
+<circle cx="715.0" cy="488.0" r="4.5" fill="#08090d" stroke="#5b8cff" stroke-width="2.5"/>
+<circle cx="947.5" cy="526.1" r="4.5" fill="#08090d" stroke="#5b8cff" stroke-width="2.5"/>
+<circle cx="1180.0" cy="522.8" r="4.5" fill="#08090d" stroke="#5b8cff" stroke-width="2.5"/>
+<text x="1180.0" y="508.752688172043" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="12" fill="#5b8cff" text-anchor="middle" font-weight="600">88%</text>
+<path d="M579.0,497.6 L715.0,491.1 L947.5,493.7 L1180.0,480.8" fill="none" stroke="#3ddc97" stroke-width="2.5" stroke-linejoin="round"/>
+<circle cx="579.0" cy="497.6" r="4.5" fill="#08090d" stroke="#3ddc97" stroke-width="2.5"/>
+<circle cx="715.0" cy="491.1" r="4.5" fill="#08090d" stroke="#3ddc97" stroke-width="2.5"/>
+<circle cx="947.5" cy="493.7" r="4.5" fill="#08090d" stroke="#3ddc97" stroke-width="2.5"/>
+<circle cx="1180.0" cy="480.8" r="4.5" fill="#08090d" stroke="#3ddc97" stroke-width="2.5"/>
+<text x="1180.0" y="466.77742946708463" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="12" fill="#3ddc97" text-anchor="middle" font-weight="600">108%</text>
+<path d="M579.0,497.6 L715.0,526.9 L947.5,610.8 L1180.0,662.1" fill="none" stroke="#ff9f45" stroke-width="2.5" stroke-linejoin="round"/>
+<circle cx="579.0" cy="497.6" r="4.5" fill="#08090d" stroke="#ff9f45" stroke-width="2.5"/>
+<circle cx="715.0" cy="526.9" r="4.5" fill="#08090d" stroke="#ff9f45" stroke-width="2.5"/>
+<circle cx="947.5" cy="610.8" r="4.5" fill="#08090d" stroke="#ff9f45" stroke-width="2.5"/>
+<circle cx="1180.0" cy="662.1" r="4.5" fill="#08090d" stroke="#ff9f45" stroke-width="2.5"/>
+<text x="1180.0" y="648.0913705583756" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="12" fill="#ff9f45" text-anchor="middle" font-weight="600">20%</text>
+<line x1="1215" y1="450" x2="1243" y2="450" stroke="#5b8cff" stroke-width="2.5"/><text x="1251" y="454" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#767d96" text-anchor="start" font-weight="400">arctic-embed-l-v2.0  · MRL</text>
+<line x1="1215" y1="472" x2="1243" y2="472" stroke="#3ddc97" stroke-width="2.5"/><text x="1251" y="476" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#767d96" text-anchor="start" font-weight="400">bekko-v1-a25m  · MRL</text>
+<line x1="1215" y1="494" x2="1243" y2="494" stroke="#ff9f45" stroke-width="2.5"/><text x="1251" y="498" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#767d96" text-anchor="start" font-weight="400">multilingual-e5-small  · no MRL (control)</text>
+<text x="715.0" y="412" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#4a5169" text-anchor="middle" font-weight="400">at 256 dims</text>
+<text x="623.0" y="430" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="13.5" fill="#5b8cff" text-anchor="start" font-weight="700">105%</text>
+<text x="657.0" y="430" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="11" fill="#4a5169" text-anchor="start" font-weight="400">arctic</text>
+<text x="715.0" y="430" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="13.5" fill="#3ddc97" text-anchor="start" font-weight="700">103%</text>
+<text x="749.0" y="430" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="11" fill="#4a5169" text-anchor="start" font-weight="400">bekko</text>
+<text x="807.0" y="430" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="13.5" fill="#ff9f45" text-anchor="start" font-weight="700">86%</text>
+<text x="841.0" y="430" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="11" fill="#4a5169" text-anchor="start" font-weight="400">multilingual</text>
+<text x="238" y="428" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="11" fill="#4a5169" text-anchor="end" font-weight="400">cross-border hits kept</text>
+<rect x="1215" y="530" width="320" height="118" rx="5" fill="#101420" stroke="#262c40" stroke-width="1"/>
+<text x="1233" y="552" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" fill="#e6e9f2" text-anchor="start" font-weight="600">The control is the point.</text>
+<text x="1233" y="572" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" fill="#767d96" text-anchor="start" font-weight="400">Same two lines of code on a model</text>
+<text x="1233" y="589" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" fill="#767d96" text-anchor="start" font-weight="400">never trained for truncation: 86% of</text>
+<text x="1233" y="606" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" fill="#767d96" text-anchor="start" font-weight="400">its hits at 256d, 20% at 64d.</text>
+<text x="1233" y="628" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" fill="#ff9f45" text-anchor="start" font-weight="400">MRL is a training objective, not a slice.</text>
+<line x1="60" y1="756" x2="1540" y2="756" stroke="#1c2030"/>
+<circle cx="69" cy="781" r="9" fill="#262c40"/><text x="69" y="785" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="11" fill="#767d96" text-anchor="middle" font-weight="600">3</text><text x="86" y="786" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="16" fill="#e6e9f2" text-anchor="start" font-weight="600">What it bought: the Spanish shelf became a web asset.</text>
+<rect x="86" y="814" width="330" height="104" rx="7" fill="#0e1017" stroke="#1c2030" stroke-width="1"/>
+<text x="104" y="844" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="15" fill="#767d96" text-anchor="start" font-weight="600">1,024d · fp32</text>
+<text x="104" y="870" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="13.5" fill="#e6e9f2" text-anchor="start" font-weight="400">4,096 B per product</text>
+<text x="104" y="892" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" fill="#4a5169" text-anchor="start" font-weight="400">what the server index stores</text>
+<path d="M421.0,866 L433.0,866 M428.0,861 L433.0,866 L428.0,871" fill="none" stroke="#4a5169" stroke-width="1.6"/>
+<rect x="440" y="814" width="330" height="104" rx="7" fill="#0e1017" stroke="#262c40" stroke-width="1"/>
+<text x="458" y="844" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="15" fill="#5b8cff" text-anchor="start" font-weight="600">256d · fp32</text>
+<text x="458" y="870" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="13.5" fill="#e6e9f2" text-anchor="start" font-weight="400">1,024 B per product</text>
+<text x="458" y="892" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" fill="#4a5169" text-anchor="start" font-weight="400">Matryoshka truncation — 4×</text>
+<path d="M775.0,866 L787.0,866 M782.0,861 L787.0,866 L782.0,871" fill="none" stroke="#4a5169" stroke-width="1.6"/>
+<rect x="794" y="814" width="330" height="104" rx="7" fill="#0e1017" stroke="#262c40" stroke-width="1"/>
+<text x="812" y="844" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="15" fill="#3ddc97" text-anchor="start" font-weight="600">256d · fp16</text>
+<text x="812" y="870" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="13.5" fill="#e6e9f2" text-anchor="start" font-weight="400">512 B per product</text>
+<text x="812" y="892" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" fill="#4a5169" text-anchor="start" font-weight="400">storage, not MRL — 8× total</text>
+<path d="M1129.0,866 L1141.0,866 M1136.0,861 L1141.0,866 L1136.0,871" fill="none" stroke="#4a5169" stroke-width="1.6"/>
+<rect x="1148" y="814" width="330" height="104" rx="7" fill="#0e1017" stroke="#262c40" stroke-width="1"/>
+<text x="1166" y="844" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="15" fill="#3ddc97" text-anchor="start" font-weight="600">× 1,248 products</text>
+<text x="1166" y="870" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="13.5" fill="#e6e9f2" text-anchor="start" font-weight="400">624 KB total</text>
+<text x="1166" y="892" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" fill="#4a5169" text-anchor="start" font-weight="400">a normal web asset</text>
+<rect x="86" y="942" width="1428" height="58" rx="7" fill="#0b1410" stroke="#1d4c38" stroke-width="1"/>
+<text x="108" y="967" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="14" fill="#3ddc97" text-anchor="start" font-weight="600">So the last panel of the demo turns the server off.</text>
+<text x="108" y="987" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" fill="#767d96" text-anchor="start" font-weight="400">The browser fetches 624 KB of vectors, encodes the query with bekko's ONNX build, applies the same α=0.75 SHIFT offset, and scans all 1,248 products — encode included — in 66–156 ms warm.</text>
+<text x="86" y="1042" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#4a5169" text-anchor="start" font-weight="400">Why two lines sit above 100%: this metric asks only whether Spanish records survived the top ten, so dropping dimensions partly does SHIFT's job for it. On recall_atc — was the right molecule found at all — the curve is flat (99.4% → 99.2% for bekko at 64d). Truncation is cheap here; it is not free everywhere.</text>
+<text x="86" y="1062" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#4a5169" text-anchor="start" font-weight="400">Arctic falls off below 256d because that is where Snowflake stopped training the objective — MRL is not magic past its trained range. Source: src/med/matryoshka.py, artifacts/med/matryoshka.json.</text>
+</svg>

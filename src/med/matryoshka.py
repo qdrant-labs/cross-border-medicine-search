@@ -13,6 +13,41 @@ shipping the index and calling a server.
 
 Truncating below 256 is included deliberately. MRL is not magic past the range
 it was trained for, and the curve should show that.
+
+RESULT, cross-border hits retained at 256 dimensions (pl->es, alpha=1):
+
+  arctic (MRL)     104.7%      1024 -> 256, a 4x saving
+  bekko  (MRL)     103.1%       384 -> 256
+  e5     (no MRL)   85.8%       384 -> 256, and 20.3% at 64
+
+The control does what a control should: without an MRL objective, E5 loses a
+seventh of its cross-border hits at 256 and almost everything by 64. Both
+MRL-trained models hold.
+
+Two things here are worth not glossing over.
+
+First, both MRL models score *above* 100%. Truncation is not merely free, it
+helps slightly, and bekko keeps climbing to 108.2% at 64 dimensions where the
+published HAKARI curve has fallen to 85.1%. That divergence is real and it is
+not the harness being wrong -- it is the metric being different. HAKARI reports
+overall retrieval quality; tgt_hits_per_query asks only whether the *Spanish*
+records survived in the top ten. Judged on recall_atc, the closer analogue to
+what bekko's authors measure, this corpus barely moves at all (99.8% at 64) --
+because finding some record of the right molecule among 5,298 registry strings
+is easy and stays easy.
+
+Second, the obvious explanation for scoring above 100% is that truncation is
+stripping the language signal, doing SHIFT's job for it. That was measured
+rather than assumed, by running the same sweep at alpha=0:
+
+  dim    no SHIFT   with SHIFT   gain from SHIFT
+  384       0.090        0.319            +0.229
+  64        0.136        0.345            +0.209
+
+Truncation does strip some language signal on its own -- 0.090 to 0.136 is a
+real if small effect. But SHIFT's contribution is nearly unchanged across a
+6x reduction in dimensions. The two are independent: you do not buy one by
+paying for the other, and a 256-byte vector still needs its offset.
 """
 import json
 import sys
@@ -30,6 +65,14 @@ from shift_med import (SHIFTED, all_offsets, embed, evaluate,  # noqa: E402
 DIMS = (1024, 512, 256, 128, 64)
 E5 = "intfloat/multilingual-e5-small"     # 384-dim, no MRL -- the control
 E5_DIMS = (384, 256, 128, 64)
+BEKKO_DIMS = (384, 256, 128, 64)
+
+# What bekko's authors report for their own model, on HAKARI-Bench overall.
+# A different benchmark on different data, so the absolute scores are not
+# comparable to anything measured here -- only the *shape* of the decline is.
+# Reproducing someone else's published degradation curve on your own corpus is
+# the cheapest available check that a truncation harness is not lying to you.
+BEKKO_PUBLISHED = {"384": 0.570, "256": 0.562, "128": 0.535, "64": 0.485}
 
 
 def truncate(v, d):
@@ -100,7 +143,25 @@ def main():
     e5_off_q = all_offsets(e5_q, docs)
     control = sweep(e5_d, e5_q, docs, E5_DIMS, langs, e5_off_d, e5_off_q)
 
+    # bekko: MRL-trained like arctic, but a third of the dimensions and 24.9M
+    # active parameters. Run in its native prefix-free configuration -- one
+    # offset, one space -- because that is how the model is meant to be used.
+    # That differs from how arctic and e5 are run above, which does not
+    # confound this table: retention is a ratio against each model's own
+    # full-dimension score, so every column is judged against itself.
+    bekko_path = OUT / "bekko_docs.npy"
+    bekko = None
+    if bekko_path.exists():
+        print("\nbekko-embedding-v1-a25m  (MRL-trained, prefix-free, 24.9M active)")
+        bk = np.load(bekko_path)
+        bk_off = all_offsets(bk, docs)
+        bekko = sweep(bk, bk, docs, BEKKO_DIMS, langs, bk_off, bk_off)
+    else:
+        print(f"\n  {bekko_path.name} not found -- run eval_bekko.py first")
+
     res = {"arctic_mrl": arctic, "e5_control": control}
+    if bekko:
+        res["bekko_mrl"] = bekko
     (OUT / "matryoshka.json").write_text(json.dumps(res, indent=1))
 
     # recall_atc is reported but it is not the metric to judge truncation by:
@@ -109,11 +170,29 @@ def main():
     # and stays easy. tgt_hits_per_query is the number under load -- it asks
     # whether the cross-border hits survived, and it is what degrades first.
     print("\nretention at 256 dimensions")
-    for label, r, dims in (("arctic (MRL) ", arctic, DIMS),
-                           ("e5   (no MRL)", control, E5_DIMS)):
+    rows = [("arctic (MRL) ", arctic, DIMS), ("e5   (no MRL)", control, E5_DIMS)]
+    if bekko:
+        rows.insert(1, ("bekko  (MRL) ", bekko, BEKKO_DIMS))
+    for label, r, dims in rows:
         f, t = r[str(dims[0])], r["256"]
         print(f"  {label}  recall {t['recall_atc'] / f['recall_atc']:6.1%}   "
               f"cross-border hits {t['tgt_hits_per_query'] / f['tgt_hits_per_query']:6.1%}")
+
+    # External check. If this harness reproduces the decline bekko's authors
+    # measured on a different benchmark, the harness is measuring truncation
+    # rather than something particular to this corpus. Divergence is not a
+    # failure -- registry strings are short and unlike HAKARI's documents -- but
+    # it is the kind of thing worth seeing before quoting a retention number.
+    if bekko:
+        base = bekko["384"]["tgt_hits_per_query"]
+        pub0 = BEKKO_PUBLISHED["384"]
+        print("\nbekko truncation: measured here vs published by its authors")
+        print(f"  {'dim':<6} {'here (cross-border)':>20} "
+              f"{'published (HAKARI)':>20}")
+        for d in BEKKO_DIMS:
+            here = bekko[str(d)]["tgt_hits_per_query"] / base
+            pub = BEKKO_PUBLISHED[str(d)] / pub0
+            print(f"  {d:<6} {here:>19.1%} {pub:>19.1%}")
 
 
 if __name__ == "__main__":
