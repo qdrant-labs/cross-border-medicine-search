@@ -54,6 +54,7 @@ tr.best td:first-child{box-shadow:inset 2px 0 0 var(--es)}
 .win{border-color:rgba(61,220,151,.4)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px}
+.embed iframe{width:100%;height:640px;border:1px solid var(--line);border-radius:8px;background:#0b0f19;display:block}
 canvas{width:100%;border:1px solid var(--line);border-radius:8px;background:#0b0d14;
   display:block;aspect-ratio:1}
 .cap{font-size:10.5px;color:var(--dim2);margin:8px 0 0;line-height:1.45}
@@ -206,20 +207,11 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;
   <h2>Hyperbolic space fits a drug classification tree</h2>
   <p class="lede">ATC is a five-level hierarchy. Hyperbolic space has exponentially more room as
   radius grows, which is the shape a tree needs; Euclidean space does not and has to crush the
-  levels together. Both embeddings below have the same dimensionality and the same training budget.</p>
-  <div class="two">
-    <div><canvas id="cp" width="620" height="620"></canvas>
-      <p class="cap"><b>Poincaré disk.</b> Radius encodes specificity: broad categories near the
-      centre, individual substances at the rim. Mean hyperbolic radius runs
-      <b>4.29 → 8.40</b> from level 1 to level 5, cleanly ordered.
-      <i>Plotted at hyperbolic distance from the origin, not raw coordinates —
-      in raw coordinates all five levels sit between 0.92 and 0.9994 of the boundary and the
-      structure is invisible. That crowding is the metric working, not a flaw.</i></p></div>
-    <div><canvas id="ce" width="620" height="620"></canvas>
-      <p class="cap"><b>Euclidean.</b> Same tree, same budget, plotted at its own norm — which is
-      already its metric, so no transform is applied. The levels interleave instead of separating:
-      there is not enough room out at the edge to keep them apart.</p></div>
-  </div>
+  levels together.</p>
+  <div class="embed"><iframe src="https://walk-in-hyperbolic.space" title="A walk in hyperbolic space"
+    loading="lazy" allowfullscreen></iframe></div>
+  <p class="cap">Interactive tour from <a href="https://walk-in-hyperbolic.space">walk-in-hyperbolic.space</a>.
+  The scores below are measured on our own ATC tree: 10-dimensional Poincaré vs Euclidean, same budget.</p>
   <div class="cards" id="geocards"></div>
   <p class="note">This is not decoration. The 10-dimensional Poincaré embedding is what reranks the
   live results, and it fixes a specific error cosine cannot: for a paracetamol box it ranks
@@ -378,70 +370,6 @@ function draw([sweep, mrl, sparse, geo, tree]){
     ["Poincaré 2d", geo.poincare_2.map, false], ["Euclidean 2d", geo.euclidean_2.map, false],
   ].map(([k,v,w]) => `<div class="card${w?" win":""}"><h4>${k}</h4>` +
     `<div class="big">${v.toFixed(4)}</div><p>mean average precision reconstructing the tree</p></div>`).join("");
-  plot("#cp", tree, "poincare", true);
-  plot("#ce", tree, "euclidean", false);
-}
-
-// Depth colours: centre-out on the disk should read as broad-to-specific, so
-// the ramp has to be monotonic in level rather than categorical.
-const DEPTH = ["#5b8cff","#39c0e8","#3ddc97","#ffc247","#ff7a45"];
-
-// Each embedding is drawn in its own distance function, and that choice needs
-// stating because it is doing real work here.
-//
-// Plotting raw Poincaré coordinates produces a ring and nothing else: the
-// hierarchy is genuinely present -- mean hyperbolic radius runs 4.29 → 8.40
-// from level 1 to level 5 -- but the ball's Euclidean norms for those same
-// points run 0.92 → 0.9994, so every level lands within 8% of the boundary and
-// the structure is invisible. That is not a defect in the embedding, it is what
-// the Poincaré metric does: distance to the rim grows without bound, which is
-// exactly the property that buys room for a tree.
-//
-// So the disk is drawn at radius proportional to *hyperbolic* distance from the
-// origin, preserving angle. The Euclidean panel is drawn at its own norm, which
-// is already its metric. Both are therefore shown under the distance they were
-// trained with, which is the only comparison that means anything -- and the
-// captions say so rather than letting the transform pass unmentioned.
-function plot(sel, tree, key, disk){
-  const c = $(sel), g = c.getContext("2d"), W = c.width;
-  const pts = tree[key];
-  const R = W/2 - 16, cx = W/2, cy = W/2;
-  g.fillStyle = "#0b0d14"; g.fillRect(0,0,W,W);
-
-  const radius = p => {
-    const n = Math.hypot(p[0], p[1]);
-    return disk ? 2 * Math.atanh(Math.min(n, 1 - 1e-12)) : n;
-  };
-  const maxR = Math.max(...pts.map(radius)) || 1;
-
-  g.strokeStyle = "#262c40"; g.lineWidth = 1;
-  g.beginPath(); g.arc(cx, cy, R, 0, 7); g.stroke();
-  g.strokeStyle = "#171b28";
-  for (let i=1;i<=4;i++){ g.beginPath(); g.arc(cx, cy, R*i/5, 0, 7); g.stroke(); }
-
-  // Deepest first, so the 13 level-1 nodes are not buried under 220 leaves.
-  pts.map((p,i) => i).sort((a,b) => tree.level[b] - tree.level[a]).forEach(i => {
-    const p = pts[i], lv = tree.level[i];
-    const ang = Math.atan2(p[1], p[0]), rr = radius(p) / maxR * R;
-    g.fillStyle = DEPTH[lv-1] || DEPTH[4];
-    g.globalAlpha = lv === 1 ? 1 : lv === 2 ? .85 : .55;
-    const dot = lv === 1 ? 5 : lv === 2 ? 3.2 : 1.9;
-    g.beginPath();
-    g.arc(cx + Math.cos(ang)*rr, cy + Math.sin(ang)*rr, dot, 0, 7);
-    g.fill();
-  });
-  g.globalAlpha = 1;
-
-  // Legend: the colour ramp is the whole claim, so it has to be readable
-  // without cross-referencing the prose.
-  g.font = "10px ui-sans-serif,system-ui,sans-serif";
-  for (let l=1;l<=5;l++){
-    const y = W - 14 - (5-l)*15;
-    g.fillStyle = DEPTH[l-1]; g.globalAlpha = 1;
-    g.beginPath(); g.arc(14, y-3, 3.4, 0, 7); g.fill();
-    g.fillStyle = "#767d96";
-    g.fillText(`level ${l}`, 23, y);
-  }
 }
 </script>
 
